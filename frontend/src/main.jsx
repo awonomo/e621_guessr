@@ -4,7 +4,8 @@ import App from "./app";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+//  Strict Mode (uncomment to enable double-loading for debugging)
+//  <React.StrictMode>
     <App />
-  </React.StrictMode>
+//   </React.StrictMode>
 );
