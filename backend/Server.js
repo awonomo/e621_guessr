@@ -16,7 +16,7 @@ app.get("/pull-posts", async (req, res) => {
     console.log("Raw tags (before encoding):", tags);
 
     // Build e621 API URL
-    const apiUrl = `https://e621.net/posts.json?limit=1&tags=${tags}`;
+    const apiUrl = `https://e621.net/posts.json?limit=1&tags=order:random ${tags}`;
     console.log("Final API URL:", apiUrl);
 
     const response = await fetch(apiUrl, {
@@ -26,7 +26,9 @@ app.get("/pull-posts", async (req, res) => {
 
     // Log post info (if any)
     if (data.posts && data.posts.length > 0) {
-      console.log("Received post ID:", data.posts[0].id);
+      const postId = data.posts[0].id;
+      const postUrl = `https://e621.net/posts/${postId}`;
+      console.log(`Received post: ${postUrl}`);
     } else {
       console.log("⚠️ No posts returned for these tags.");
     }

@@ -1,20 +1,27 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher } from "svelte";
   const dispatch = createEventDispatcher();
 
   // ratings mapping
   const ratingMap = {
-    safe: 'rating:s',
-    questionable: 'rating:q',
-    explicit: 'rating:e'
+    safe: "rating:s",
+    questionable: "rating:q",
+    explicit: "rating:e",
   };
 
   // form state
   let timeLimit = 120;
-  let gameMode = 'tagGuessing';
+
+  $: if (timeLimit < 30) {
+    timeLimit = 30;
+  }
+  let gameMode = "tagGuessing";
   let ratings = { safe: true, questionable: false, explicit: false };
   let minUpvotes = 250;
-  let customCriteria = '';
+    $: if (minUpvotes > 10000) {
+    minUpvotes = 10000;
+  }
+  let customCriteria = "";
 
   // helper: toggle checkbox
   function toggle(r) {
@@ -26,15 +33,15 @@
     const tags = [];
 
     // ---- Ratings ----
-    const selected = Object.keys(ratings).filter(k => ratings[k]);
+    const selected = Object.keys(ratings).filter((k) => ratings[k]);
 
     if (selected.length === 1) {
       // only one rating selected → just include that one
       tags.push(ratingMap[selected[0]]);
     } else if (selected.length === 2) {
       // two selected → exclude the missing one
-      const missing = Object.keys(ratings).find(k => !ratings[k]);
-      tags.push('-' + ratingMap[missing]);
+      const missing = Object.keys(ratings).find((k) => !ratings[k]);
+      tags.push("-" + ratingMap[missing]);
     }
     // if all three are selected, do nothing (default)
 
@@ -44,21 +51,21 @@
     }
 
     // ---- Fixed tags ----
-    tags.push('-animated', '-young', 'tagcount:>=50');
+    tags.push("-animated", "-young", "tagcount:>=50");
 
     // ---- Custom criteria ----
     if (customCriteria.trim()) {
       tags.push(customCriteria.trim());
     }
 
-    return tags.join(' ');
+    return tags.join(" ");
   }
 
   async function submit(e) {
     e.preventDefault();
 
     const tags = buildTags();
-    console.log('Final tags for API:', tags);
+    console.log("Final tags for API:", tags);
 
     const res = await fetch(`/pull-posts?tags=${encodeURIComponent(tags)}`);
     const data = await res.json();
@@ -67,56 +74,122 @@
     const config = {
       timeLimit,
       gameMode,
-      ratings: Object.keys(ratings).filter(k => ratings[k]),
+      ratings: Object.keys(ratings).filter((k) => ratings[k]),
       minUpvotes,
       customCriteria,
-      post: data
+      post: data,
     };
 
-    dispatch('start', config);
+    dispatch("start", config);
   }
 </script>
 
+<main>
+  <img id="mascot" src="https://static1.e621.net/data/e3/7a/e37aa3f786602f4dc8020f93675376f2.gif" alt="Post 2939458">
+  <div class="mascot-credit">artist: tuwka</div>
+  <header class="logo-header">
+    <h1>e6_tag_challenge</h1>
+    <span>by awonomo and birch</span>
+  </header>
 <form on:submit|preventDefault={submit} class="setup-form">
   <div>
-    <label>Time Limit (seconds)</label>
-    <input type="number" min="30" bind:value={timeLimit} />
+    <label for="timeLimit">Time Limit (seconds)</label>
+    <input id="timeLimit" type="number" min="30" bind:value={timeLimit} />
   </div>
 
   <div>
-    <label>Game Mode</label>
-    <select bind:value={gameMode}>
+    <label for="gameMode">Game Mode</label>
+    <select id="gameMode" bind:value={gameMode}>
       <option value="tagGuessing">Tag Guessing</option>
     </select>
   </div>
 
   <div>
-    <label>Rating</label>
-    <div>
-      {#each Object.keys(ratings) as r}
-        <label>
-          <input type="checkbox" checked={ratings[r]} on:change={() => toggle(r)} />
-          {r}
-        </label>
-      {/each}
-    </div>
+    <fieldset>
+      <legend>Rating</legend>
+      <div>
+        {#each Object.keys(ratings) as r}
+          <label for={`rating-${r}`}>
+            <input
+              id={`rating-${r}`}
+              type="checkbox"
+              checked={ratings[r]}
+              on:change={() => toggle(r)}
+            />
+            {r}
+          </label>
+        {/each}
+      </div>
+    </fieldset>
   </div>
 
   <div>
-    <label>Minimum Upvotes</label>
-    <input type="number" min="0" bind:value={minUpvotes} />
+    <label for="minUpvotes">Minimum Upvotes</label>
+    <input id="minUpvotes" type="number" min="0" bind:value={minUpvotes} />
   </div>
 
   <div>
-    <label>Custom Criteria</label>
-    <input type="text" bind:value={customCriteria} placeholder="e.g. special tag" />
+    <label for="customCriteria">Custom Criteria</label>
+    <input
+      id="customCriteria"
+      type="text"
+      bind:value={customCriteria}
+      placeholder="filter by tags"
+      maxlength="32"
+    />
   </div>
 
-  <button type="submit">Start Game</button>
+  <button id="start-button" type="submit">Start Game</button>
 </form>
+</main>
 
 <style>
-  .setup-form { max-width: 700px; margin: 2rem auto; }
-  label { display:block; margin-bottom: .25rem; }
-  input, select { padding:.5rem; width:100%; margin-bottom: .75rem; }
+    main {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .setup-form {
+    max-width: 700px;
+    margin: 2rem auto;
+  }
+  label {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+  input,
+  select {
+    padding: 0.5rem;
+    width: 100%;
+    margin-bottom: 0.75rem;
+  }
+
+  .logo-header {
+    text-align: center;
+  }
+
+  #mascot {
+    display: block;
+    margin: 0 auto 0.5rem auto;
+    width: 40vh;
+    border-radius: 8px;
+  }
+  .mascot-credit {
+    text-align: center;
+    font-size: 0.95rem;
+    color: #aaa;
+    margin-bottom: 1rem;
+  }
+
+  #start-button {
+    border-radius: 8px;
+    border: none;
+    background: #fcb342;
+    font-weight: 600;
+    width: 100%;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
 </style>

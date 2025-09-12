@@ -77,3 +77,26 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+  .tag-categorized {
+    --tag-general: #b4c7d9;
+    --tag-artist: #f2ac08;
+    --tag-contributor: silver;
+    --tag-copyright: #d0d;
+    --tag-character: #0a0;
+    --tag-species: #ed5d1f;
+    --tag-meta: #fff;
+    --tag-lore: #282;
+    --tag-invalid: #ff3d3d;
+  }
+
+  .logo-header {
+    margin-bottom: 2rem;
+  }
+
+  .logo-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    line-height: 1.1;
+    font-style: italic;
+  }

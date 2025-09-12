@@ -1,6 +1,6 @@
 <script>
-  import GameSetup from './GameSetup.svelte';
-  import GameScreen from './GameScreen.svelte';
+  import GameSetup from "./GameSetup.svelte";
+  import GameScreen from "./GameScreen.svelte";
 
   let gameConfig = null;
 
