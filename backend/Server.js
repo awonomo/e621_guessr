@@ -1,32 +1,43 @@
+// server.js (excerpt)
 import express from "express";
 import fetch from "node-fetch";
-import cors from "cors";
 
 const app = express();
+const PORT = 3001;
 
-// ✅ allow requests from frontend
-app.use(cors({
-    origin: "http://localhost:5173"
-}));
+// Example endpoint
+app.get("/pull-posts", async (req, res) => {
+  try {
+    const { tags } = req.query;
 
-app.get("/random-post", async (req, res) => {
-    try {
-        const response = await fetch(
-            "https://e621.net/posts.json?tags=order:random&limit=1",
-            {
-                headers: {
-                    "User-Agent": "TagGuessGame/1.0 (by xX_Birch_the_deer_Xx"
-                }
-            }
-        );
-        const data = await response.json();
-        res.json(data.posts[0]);
-    } catch (err) {
-        console.error("Error fetching post:", err);
-        res.status(500).json({ error: err.message });
+    // Log the raw tags received from the frontend
+    console.log("========================================");
+    console.log("API Request: /pull-posts");
+    console.log("Raw tags (before encoding):", tags);
+
+    // Build e621 API URL
+    const apiUrl = `https://e621.net/posts.json?limit=1&tags=${tags}`;
+    console.log("Final API URL:", apiUrl);
+
+    const response = await fetch(apiUrl, {
+      headers: { "User-Agent": "e6 Tag Challenge/1.0 (by xX_Birch_the_deer_Xx" }
+    });
+    const data = await response.json();
+
+    // Log post info (if any)
+    if (data.posts && data.posts.length > 0) {
+      console.log("Received post ID:", data.posts[0].id);
+    } else {
+      console.log("⚠️ No posts returned for these tags.");
     }
+
+    res.json(data.posts[0] || {});
+  } catch (err) {
+    console.error("Error in /pull-posts:", err);
+    res.status(500).json({ error: "Failed to fetch post" });
+  }
 });
 
-app.listen(3001, () =>
-    console.log("✅ Backend running on http://localhost:3001")
-);
+app.listen(PORT, () => {
+  console.log(`Server listening on http://localhost:${PORT}`);
+});
