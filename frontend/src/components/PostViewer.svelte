@@ -1,12 +1,16 @@
 <script>
   import { onMount, createEventDispatcher } from "svelte";
   export let currentPost;
+
+  // Reactive statement to update displayed image when currentPost changes
+  $: imageUrl = currentPost?.sample?.url || currentPost?.file?.url || '';
+  $: imageAlt = `Post ${currentPost?.id || ''}`;
 </script>
 
 <section class="PostViewer">
   <img
-    src={currentPost.sample?.url || currentPost.file.url}
-    alt={`Post ${currentPost.id}`}
+    src={imageUrl}
+    alt={imageAlt}
   />
 </section>
 

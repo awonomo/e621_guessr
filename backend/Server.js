@@ -16,7 +16,7 @@ app.get("/pull-posts", async (req, res) => {
     console.log("Raw tags (before encoding):", tags);
 
     // Build e621 API URL
-    const apiUrl = `https://e621.net/posts.json?limit=1&tags=order:random ${tags}`;
+    const apiUrl = `https://e621.net/posts.json?limit=5&tags=order:random ${tags}`;
     console.log("Final API URL:", apiUrl);
 
     const response = await fetch(apiUrl, {
@@ -24,19 +24,20 @@ app.get("/pull-posts", async (req, res) => {
     });
     const data = await response.json();
 
-    // Log post info (if any)
+    // Log info for all posts returned
     if (data.posts && data.posts.length > 0) {
-      const postId = data.posts[0].id;
-      const postUrl = `https://e621.net/posts/${postId}`;
-      console.log(`Received post: ${postUrl}`);
+      data.posts.forEach((post, idx) => {
+        const postUrl = `https://e621.net/posts/${post.id}`;
+        console.log(`Received post #${idx + 1}: ${postUrl}`);
+      });
     } else {
       console.log("⚠️ No posts returned for these tags.");
     }
 
-    res.json(data.posts[0] || {});
+    res.json({ posts: data.posts });
   } catch (err) {
     console.error("Error in /pull-posts:", err);
-    res.status(500).json({ error: "Failed to fetch post" });
+    res.status(500).json({ error: "Failed to fetch posts" });
   }
 });
 

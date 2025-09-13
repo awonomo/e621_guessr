@@ -1,21 +1,19 @@
 <script>
+  export let gameState;
+  export let currentPost;
   import ScoreDisplay from "./ScoreDisplay.svelte";
   import TagsList from "./TagsList.svelte";
   import Timer from "./Timer.svelte";
   import { createEventDispatcher } from "svelte";
   const dispatch = createEventDispatcher();
-
-  export let score = 0;
-  export let currentPost;
-  export let correctGuesses = {};
-  export let initialTime = 60;
 </script>
 
-<div class="scoreboard left">
-  <ScoreDisplay {score} />
-  <Timer {initialTime} onTimeUp={() => dispatch("endGame")} />
-  <TagsList {currentPost} {correctGuesses} />
-  <button class="end" on:click={() => dispatch("endGame")}>End Game</button>
+<div class="scoreboard">
+  <ScoreDisplay score={gameState.score} />
+  <Timer roundKey={gameState.currentRound} roundActive={gameState.roundActive} initialTime={gameState.timeLimit} onTimeUp={() => dispatch("nextRound")} />
+  <TagsList currentPost={currentPost} correctGuesses={gameState.correctGuesses} />
+  <span>Round {gameState.currentRound + 1} / {gameState.totalRounds}</span>
+  <button class="end" on:click={() => dispatch("nextRound")}>Skip</button>
 </div>
 
 <style>

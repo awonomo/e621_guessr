@@ -1,20 +1,36 @@
 <script>
   import { onMount } from "svelte";
+  export let roundActive = false;
   export let initialTime = 60;
   export let onTimeUp = () => {};
+  export let roundKey;
 
   let timeLeft = initialTime;
   let interval;
 
-  onMount(() => {
+    $: if (roundKey !== undefined) {
+    timeLeft = initialTime;
+  }
+
+  $: if (roundActive) {
+    if (interval) clearInterval(interval);
     interval = setInterval(() => {
-      timeLeft = Math.max(0, timeLeft - 1);
-      if (timeLeft === 0) {
+      if (timeLeft > 0) {
+        timeLeft -= 1;
+      } else {
         clearInterval(interval);
         onTimeUp();
       }
     }, 1000);
-    return () => clearInterval(interval);
+  } else {
+    if (interval) clearInterval(interval);
+  }
+
+  // Clean up interval on destroy
+  onMount(() => {
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   });
 </script>
 

@@ -9,11 +9,10 @@
     explicit: "rating:e",
   };
 
-  // form state
   let timeLimit = 120;
 
-  $: if (timeLimit < 30) {
-    timeLimit = 30;
+  $: if (timeLimit < 10) {
+    timeLimit = 10;
   }
   let gameMode = "tagGuessing";
   let ratings = { safe: true, questionable: false, explicit: false };
@@ -66,7 +65,6 @@
 
     const tags = buildTags();
     console.log("Final tags for API:", tags);
-
     const res = await fetch(`/pull-posts?tags=${encodeURIComponent(tags)}`);
     const data = await res.json();
 
@@ -94,7 +92,7 @@
 <form on:submit|preventDefault={submit} class="setup-form">
   <div>
     <label for="timeLimit">Time Limit (seconds)</label>
-    <input id="timeLimit" type="number" min="30" bind:value={timeLimit} />
+    <input id="timeLimit" type="number" min="10" bind:value={timeLimit} />
   </div>
 
   <div>

@@ -1,7 +1,7 @@
 <script>
   import { createEventDispatcher, onMount } from "svelte";
   export let clearInput = false;
-  export let guessStatus = '';
+  export let guessStatus = null;
 
   $: if (clearInput) {
     guess = "";

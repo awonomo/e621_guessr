@@ -1,10 +1,12 @@
 <script>
   export let currentPost;
   export let correctGuesses = {};
-  $: totalTags = Object.keys(currentPost.tags).reduce(
-    (sum, k) => sum + currentPost.tags[k].length,
-    0
-  );
+  $: totalTags = currentPost && currentPost.tags
+    ? Object.keys(currentPost.tags).reduce(
+        (sum, k) => sum + currentPost.tags[k].length,
+        0
+      )
+    : 0;
 </script>
 
 <div class="total-tags"><strong>Total Tags:</strong> {totalTags}</div>

@@ -3,23 +3,35 @@
   import PostViewer from "./components/PostViewer.svelte";
   import GuessInput from "./components/GuessInput.svelte";
   import Scoreboard from "./components/Scoreboard.svelte";
-
-  export let gameConfig;
+  import CountdownOverlay from './components/CountdownOverlay.svelte';
+  export let gameState;
+  export let nextRound = () => {};
   const dispatch = createEventDispatcher();
 
-  let timeLeft = gameConfig.timeLimit;
-  let currentPost = gameConfig.post;
-  let correctGuesses = {};
-  let guessStatus = null;
-  let score = 0;
+  let timeLeft = gameState.timeLimit;
+  $: currentPost = (gameState.posts && gameState.posts.length > 0 && gameState.posts[gameState.currentRound] !== undefined) ? gameState.posts[gameState.currentRound] : null;
+  $: if (currentPost) console.log('CurrentPost updated:', currentPost);
   let clearInput = false;
+  
+  let showCountdown = true;
+
+// $: if (typeof gameState.currentRound === 'number') {
+//   timeLeft = gameState.timeLimit;
+//   // reset guesses, status, etc.
+// }
+
+function countdownFinish() {
+  showCountdown = false;
+  gameState.roundActive = true;
+  // Optionally start timer or enable input here
+}
 
   function handleGuess({ detail }) {
     const guess = detail.guess.trim().toLowerCase();
     if (!guess) return;
 
     let found = false;
-    const updated = { ...correctGuesses };
+    const updated = { ...gameState.correctGuesses };
 
     Object.entries(currentPost.tags).forEach(([category, tagList]) => {
       tagList.forEach((tag) => {
@@ -32,20 +44,17 @@
     });
 
      if (found) {
-    score += 125;
-    correctGuesses = updated;
+    gameState.score += 125;
+    gameState.correctGuesses = updated;
     clearInput = true;
-    guessStatus = 'correct';
-    setTimeout(() => { clearInput = false; guessStatus = ''; }, 800);
+    gameState.guessStatus = 'correct';
+    setTimeout(() => { clearInput = false; gameState.guessStatus = ''; }, 800);
   } else {
-    guessStatus = 'incorrect';
-    setTimeout(() => { guessStatus = ''; }, 800);
+    gameState.guessStatus = 'incorrect';
+    setTimeout(() => { gameState.guessStatus = ''; }, 800);
   }
-}
-
-  function endGame() {
-    dispatch("reset");
   }
+  
 </script>
 
 <div class="game-screen">
@@ -56,15 +65,16 @@
 
   <main>
     <PostViewer {currentPost} />
-      <GuessInput on:guess={handleGuess} {clearInput} {guessStatus} />
+    <GuessInput on:guess={handleGuess} clearInput={clearInput} guessStatus={gameState.guessStatus} />
     <Scoreboard
-      {score}
-      initialTime={gameConfig.timeLimit}
-      on:endGame={endGame}
+      {gameState}
+      on:nextRound={nextRound}
       {currentPost}
-      {correctGuesses}
     />
   </main>
+    {#if showCountdown}
+    <CountdownOverlay onFinish={countdownFinish} />
+  {/if}
 </div>
 
 <style>

@@ -2,24 +2,61 @@
   import GameSetup from "./GameSetup.svelte";
   import GameScreen from "./GameScreen.svelte";
 
-  let gameConfig = null;
+  // Initial game state
+  const initialGameState = {
+    totalRounds: 5,
+    currentRound: 0,
+    roundActive: false,
+    score: 0,
+    timeLimit: 120,
+    timeLeft: 120,
+    posts: [],
+    guessStatus: null,
+    correctGuesses: {}
+};
 
-  // Start game handler: receives config from GameSetup
-  function handleStart(event) {
-    gameConfig = event.detail; // contains timeLimit, post, ratings, etc.
+// Current game state
+let gameState = { ...initialGameState };
+let showGameScreen = false; // boolean that controls UI flow between setup and game screen
+
+  //receives settings from GameSetup in event, merges them with gameState object
+  function gameStart(event) {
+    gameState = {
+      ...gameState,
+      ...event.detail,
+      posts: event.detail.post.posts
+    };
+    showGameScreen = true;
   }
 
-  // Reset game handler: triggered from GameScreen
-  function handleReset() {
-    gameConfig = null;
+  // Reset game to initial state
+  function gameReset() {
+    gameState = { ...initialGameState };
+    showGameScreen = false;
   }
+
+$: if (gameState.timeLeft) console.log('Time left:', gameState.timeLeft);
+
+function nextRound() {
+    if (gameState.currentRound < gameState.totalRounds - 1) {
+      gameState.currentRound += 1;
+      // gameState.roundActive = false;     
+      gameState.timeLeft = gameState.timeLimit;
+      gameState.score = 0;
+      gameState.correctGuesses = {};
+    } else {
+      gameReset();
+    }
+    console.log('Next Round!');
+  }
+
 </script>
 
 <main>
-  {#if !gameConfig}
-    <GameSetup on:start={handleStart} />
+  {#if !showGameScreen}
+    <GameSetup on:start={gameStart} />
   {:else}
-    <GameScreen {gameConfig} on:reset={handleReset} />
+    <GameScreen {gameState} nextRound={nextRound} />
   {/if}
 </main>
 
