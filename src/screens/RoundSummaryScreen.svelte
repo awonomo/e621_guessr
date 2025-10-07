@@ -6,22 +6,22 @@
   import RoundBreakdown from '../components/RoundBreakdown.svelte';
   
   let scrollContainer: HTMLElement;
-  let currentPage = 0; // 0 = summary, 1 = missed tags
-  let isScrolling = false;
+  let currentPage = $state(0); // 0 = summary, 1 = missed tags
+  let isScrolling = $state(false);
   
-  // Calculate round statistics
-  $: roundNumber = ($currentSession?.currentRound || 0) + 1;
-  $: roundData = $currentRound;
-  $: totalTags = roundData?.post?.tags ? Object.values(roundData.post.tags).flat().length : 0;
-  $: guessedTags = roundData?.correctGuesses ? Object.values(roundData.correctGuesses).flat().length : 0;
-  $: roundScore = roundData?.score || 0;
-  $: totalGameScore = $currentSession?.totalScore || 0;
+  // Calculate round statistics using $derived
+  let roundNumber = $derived(($currentSession?.currentRound || 0) + 1);
+  let roundData = $derived($currentRound);
+  let totalTags = $derived(roundData?.post?.tags ? Object.values(roundData.post.tags).flat().length : 0);
+  let guessedTags = $derived(roundData?.correctGuesses ? Object.values(roundData.correctGuesses).flat().length : 0);
+  let roundScore = $derived(roundData?.score || 0);
+  let totalGameScore = $derived($currentSession?.totalScore || 0);
   
   // Find best scoring tag
-  $: bestTag = findBestScoringTag();
+  let bestTag = $derived(findBestScoringTag());
   
   // Check if there are any tags to show in breakdown
-  $: hasTagsToShow = $currentRound?.post?.tags && Object.values($currentRound.post.tags).flat().length > 0;
+  let hasTagsToShow = $derived($currentRound?.post?.tags && Object.values($currentRound.post.tags).flat().length > 0);
   
   function findBestScoringTag() {
     if (!roundData?.correctGuesses) return null;
@@ -128,13 +128,13 @@
 <div class="round-summary-screen">
   <!-- Static Top Bar -->
   <div class="top-bar">
-    <button class="icon-button quit-button" on:click={quitGame} title="Quit Game">
+    <button class="icon-button quit-button" onclick={quitGame} title="Quit Game">
       ✕
     </button>
     
     <button 
       class="icon-button next-button glowing" 
-      on:click={nextRound} 
+      onclick={nextRound} 
       title="Next Round"
     >
       {#if $canAdvanceRound}
@@ -154,7 +154,7 @@
   <div 
     class="content-container"
     bind:this={scrollContainer}
-    on:wheel={handleScroll}
+    onwheel={handleScroll}
   >
     <!-- Page 1: Round Summary -->
     <div class="summary-page">

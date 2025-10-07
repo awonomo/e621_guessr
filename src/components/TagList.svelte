@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { onMount, afterUpdate } from 'svelte';
+  import { onMount } from 'svelte';
   import type { TagCategory, TagScoreEntry } from '../lib/types';
   
-  export let correctGuesses: Partial<Record<TagCategory, TagScoreEntry[]>>;
+  let { correctGuesses }: { correctGuesses: Partial<Record<TagCategory, TagScoreEntry[]>> } = $props();
   
   interface TagEntry {
     tag: string;
@@ -14,16 +14,16 @@
     uniqueKey: string; // Add unique key for Svelte each blocks
   }
   
-  let tagEntries: TagEntry[] = [];
+  let tagEntries = $state<TagEntry[]>([]);
   let containerElement: HTMLElement;
-  let canScroll = false;
-  let tagOrder = 0;
+  let canScroll = $state(false);
+  let tagOrder = $state(0);
   
   // Track previous guesses to detect new ones
-  let previousGuesses = new Set<string>();
+  let previousGuesses = $state(new Set<string>());
   
   // Convert correctGuesses to sorted array with animations - only when actually needed
-  $: {
+  $effect(() => {
     const currentGuesses = new Set<string>();
     
     // First, collect all current guesses to check if anything actually changed
@@ -76,10 +76,10 @@
       tagEntries = newEntries;
       previousGuesses = currentGuesses;
     }
-  }
+  });
   
   // Check if container can scroll
-  afterUpdate(() => {
+  $effect(() => {
     if (containerElement) {
       canScroll = containerElement.scrollHeight > containerElement.clientHeight;
     }
@@ -98,9 +98,11 @@
   }
   
   // Auto-scroll when new tags are added
-  $: if (tagEntries.length > 0) {
-    setTimeout(scrollToNewTag, 100);
-  }
+  $effect(() => {
+    if (tagEntries.length > 0) {
+      setTimeout(scrollToNewTag, 100);
+    }
+  });
 </script>
 
 <div class="tag-list-container">

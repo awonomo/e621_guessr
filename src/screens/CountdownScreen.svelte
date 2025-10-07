@@ -2,8 +2,8 @@
   import { gameActions } from '../lib/gameStore';
   import { onMount } from 'svelte';
 
-  let countdown = 3; // Start at 3 instead of 4
-  let message = "6";
+  let countdown = $state(3); // Start at 3 instead of 4
+  let message = $state("6");
 
   onMount(() => {
     const messages = ["6", "2", "1", "GO!"];

@@ -1,9 +1,7 @@
 <script lang="ts">
   import type { Post } from '../lib/types';
   
-  export let post: Post;
-  export let size: 'small' | 'medium' | 'large' = 'medium';
-  export let showId: boolean = true;
+  let { post, size = 'medium', showId = true }: { post: Post; size?: 'small' | 'medium' | 'large'; showId?: boolean } = $props();
 </script>
 
 <div class="post-thumbnail {size}">

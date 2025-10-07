@@ -1,9 +1,7 @@
 <script lang="ts">
   import type { TagCategory } from '../lib/types';
   
-  export let tag: string;
-  export let category: TagCategory;
-  export let points: number;
+  let { tag, category, points }: { tag: string; category: TagCategory; points: number } = $props();
 </script>
 
 <div class="best-tag">

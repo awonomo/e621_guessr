@@ -1,21 +1,22 @@
 <script lang="ts">
   import type { Post } from '../lib/types';
   
-  export let post: Post;
-  export let isPaused = false;
+  let { post, isPaused = false }: { post: Post; isPaused?: boolean } = $props();
   
-  let imageLoaded = false;
-  let imageError = false;
-  let imgElement: HTMLImageElement;
+  let imageLoaded = $state(false);
+  let imageError = $state(false);
+  let imgElement = $state<HTMLImageElement>();
   
   // Use sample URL if available, fallback to full file URL
-  $: imageUrl = post.sample?.url || post.file?.url || '';
-  $: imageAlt = `Post ${post.id}`;
+  let imageUrl = $derived(post.sample?.url || post.file?.url || '');
+  let imageAlt = $derived(`Post ${post.id}`);
   
   // Check if image is already cached when URL changes
-  $: if (imageUrl) {
-    checkIfImageCached();
-  }
+  $effect(() => {
+    if (imageUrl) {
+      checkIfImageCached();
+    }
+  });
   
   function checkIfImageCached() {
     if (!imageUrl) return;
@@ -60,10 +61,12 @@
   }
   
   // Check if image is already loaded when element is bound
-  $: if (imgElement && imageUrl && imgElement.complete && imgElement.naturalWidth > 0) {
-    imageLoaded = true;
-    imageError = false;
-  }
+  $effect(() => {
+    if (imgElement && imageUrl && imgElement.complete && imgElement.naturalWidth > 0) {
+      imageLoaded = true;
+      imageError = false;
+    }
+  });
 </script>
 
 <div class="post-viewer" class:paused={isPaused}>
@@ -77,8 +80,8 @@
       bind:this={imgElement}
       src={imageUrl}
       alt={imageAlt}
-      on:load={handleImageLoad}
-      on:error={handleImageError}
+      onload={handleImageLoad}
+      onerror={handleImageError}
       class="post-image"
       class:loaded={imageLoaded}
       loading="eager"
