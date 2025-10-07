@@ -1,18 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   
-  let { score = 0 }: { score?: number } = $props();
+  export let score: number = 0;
   
-  let displayScore = $state(0);
-  let lastTargetScore = $state(0);
-  let isAnimating = $state(false);
+  let displayScore = 0;
+  let lastTargetScore = 0;
+  let isAnimating = false;
   
   // Animate score changes only when the target score actually changes
-  $effect(() => {
-    if (score !== lastTargetScore && !isAnimating) {
-      animateScore(score);
-    }
-  });
+  $: if (score !== lastTargetScore && !isAnimating) {
+    animateScore(score);
+  }
   
   function animateScore(targetScore: number) {
     if (isAnimating) return;
@@ -45,8 +43,8 @@
   }
   
   // Calculate text size based on number of digits - made larger
-  let digitCount = $derived(displayScore.toString().length);
-  let fontSize = $derived(Math.max(2.5, 5.5 - (digitCount * 0.2))); // Scale down as numbers get longer
+  $: digitCount = displayScore.toString().length;
+  $: fontSize = Math.max(2.5, 5.5 - (digitCount * 0.2)); // Scale down as numbers get longer
 </script>
 
 <div class="score-display" class:glowing={isAnimating}>

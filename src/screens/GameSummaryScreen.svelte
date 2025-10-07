@@ -6,21 +6,21 @@
   import RoundBreakdown from '../components/RoundBreakdown.svelte';
   
   let scrollContainer: HTMLElement;
-  let currentPage = $state(0); // 0 = summary, 1+ = round breakdowns
-  let isScrolling = $state(false);
+  let currentPage = 0; // 0 = summary, 1+ = round breakdowns
+  let isScrolling = false;
   
-  // Calculate game statistics using $derived
-  let totalScore = $derived($currentSession?.totalScore || 0);
-  let isNewBest = $derived(totalScore > 0 && totalScore > ($userStats?.bestScore || 0));
-  let rounds = $derived($currentSession?.rounds || []);
-  let totalTags = $derived(rounds.reduce((sum, round) => 
-    sum + Object.values(round.post.tags).flat().length, 0));
-  let guessedTags = $derived(rounds.reduce((sum, round) => 
-    sum + Object.values(round.correctGuesses).flat().length, 0));
+  // Calculate game statistics
+  $: totalScore = $currentSession?.totalScore || 0;
+  $: isNewBest = totalScore > 0 && totalScore > ($userStats?.bestScore || 0);
+  $: rounds = $currentSession?.rounds || [];
+  $: totalTags = rounds.reduce((sum, round) => 
+    sum + Object.values(round.post.tags).flat().length, 0);
+  $: guessedTags = rounds.reduce((sum, round) => 
+    sum + Object.values(round.correctGuesses).flat().length, 0);
   
   // Find best scoring tag across all rounds
-  let bestTag = $derived(findBestScoringTag());
-  let isDailyChallenge = $derived($currentSession?.settings.mode === 'daily');
+  $: bestTag = findBestScoringTag();
+  $: isDailyChallenge = $currentSession?.settings.mode === 'daily';
   
     function findBestScoringTag() {
     let bestTag = null;
@@ -120,14 +120,14 @@
   <!-- Static Top Bar -->
   <div class="top-bar">
     {#if !isDailyChallenge}
-      <button class="icon-button home-button" onclick={returnHome} title="Return Home">
+      <button class="icon-button home-button" on:click={returnHome} title="Return Home">
         🏠
       </button>
     {:else}
       <div></div> <!-- Spacer for daily challenge -->
     {/if}
     
-    <button class="icon-button share-button" onclick={shareResults} title="Share Results">
+    <button class="icon-button share-button" on:click={shareResults} title="Share Results">
       📤
     </button>
   </div>
@@ -136,7 +136,7 @@
   <div 
     class="content-container"
     bind:this={scrollContainer}
-    onwheel={handleScroll}
+    on:wheel={handleScroll}
   >
     <!-- Page 0: Game Summary -->
     <div class="summary-page">
@@ -161,11 +161,11 @@
         
         <div class="action-buttons">
           {#if isDailyChallenge}
-            <button class="play-again-button daily" onclick={returnHome}>
+            <button class="play-again-button daily" on:click={returnHome}>
               Return Home
             </button>
           {:else}
-            <button class="play-again-button" onclick={playAgain} title="Play Again">
+            <button class="play-again-button" on:click={playAgain} title="Play Again">
               Again
             </button>
           {/if}

@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, afterUpdate } from 'svelte';
   import type { TagCategory, TagScoreEntry } from '../lib/types';
   
-  let { correctGuesses }: { correctGuesses: Partial<Record<TagCategory, TagScoreEntry[]>> } = $props();
+  export let correctGuesses: Partial<Record<TagCategory, TagScoreEntry[]>>;
   
   interface TagEntry {
     tag: string;
@@ -14,16 +14,16 @@
     uniqueKey: string; // Add unique key for Svelte each blocks
   }
   
-  let tagEntries = $state<TagEntry[]>([]);
+  let tagEntries: TagEntry[] = [];
   let containerElement: HTMLElement;
-  let canScroll = $state(false);
-  let tagOrder = $state(0);
+  let canScroll = false;
+  let tagOrder = 0;
   
   // Track previous guesses to detect new ones
-  let previousGuesses = $state(new Set<string>());
+  let previousGuesses = new Set<string>();
   
   // Convert correctGuesses to sorted array with animations - only when actually needed
-  $effect(() => {
+  $: {
     const currentGuesses = new Set<string>();
     
     // First, collect all current guesses to check if anything actually changed
@@ -76,17 +76,16 @@
       tagEntries = newEntries;
       previousGuesses = currentGuesses;
     }
-  });
+  }
   
-  // Check if container can scroll - check only when containerElement changes
-  $effect(() => {
+  // Check if container can scroll
+  afterUpdate(() => {
     if (containerElement) {
-      // Use a separate microtask to avoid infinite loops
-      setTimeout(() => {
-        canScroll = containerElement.scrollHeight > containerElement.clientHeight;
-      }, 0);
+      canScroll = containerElement.scrollHeight > containerElement.clientHeight;
     }
   });
+  
+
   
   function scrollToNewTag() {
     if (containerElement && tagEntries.length > 0) {
@@ -99,11 +98,9 @@
   }
   
   // Auto-scroll when new tags are added
-  $effect(() => {
-    if (tagEntries.length > 0) {
-      setTimeout(scrollToNewTag, 100);
-    }
-  });
+  $: if (tagEntries.length > 0) {
+    setTimeout(scrollToNewTag, 100);
+  }
 </script>
 
 <div class="tag-list-container">

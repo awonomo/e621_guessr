@@ -4,11 +4,12 @@
   import PostThumbnail from './PostThumbnail.svelte';
   import { backendApi } from '../lib/backendApi';
   
-  let { roundData, roundNumber }: { roundData: RoundData; roundNumber: number } = $props();
+  export let roundData: RoundData;
+  export let roundNumber: number;
   
   // Store backend-calculated scores for all tags
-  let tagScores = $state(new Map<string, number>());
-  let isLoadingScores = $state(true);
+  let tagScores: Map<string, number> = new Map();
+  let isLoadingScores = true;
   
   // Score all tags when component mounts
   onMount(async () => {
@@ -126,8 +127,8 @@
     return consolidated;
   }
   
-  let consolidatedTags = $derived(getConsolidatedTags());
-  let orderedCategories = $derived(getCategoryDisplayOrder().filter(category => consolidatedTags[category]));
+  $: consolidatedTags = getConsolidatedTags();
+  $: orderedCategories = getCategoryDisplayOrder().filter(category => consolidatedTags[category]);
 </script>
 
 <div class="round-breakdown">
