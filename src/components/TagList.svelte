@@ -78,14 +78,15 @@
     }
   });
   
-  // Check if container can scroll
+  // Check if container can scroll - check only when containerElement changes
   $effect(() => {
     if (containerElement) {
-      canScroll = containerElement.scrollHeight > containerElement.clientHeight;
+      // Use a separate microtask to avoid infinite loops
+      setTimeout(() => {
+        canScroll = containerElement.scrollHeight > containerElement.clientHeight;
+      }, 0);
     }
   });
-  
-
   
   function scrollToNewTag() {
     if (containerElement && tagEntries.length > 0) {
