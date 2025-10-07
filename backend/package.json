@@ -1,0 +1,51 @@
+{
+  "name": "e6-tag-challenge-backend",
+  "version": "1.0.0",
+  "description": "Backend API for e6 Tag Challenge game",
+  "main": "dist/server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "cli": "tsx src/cli.ts",
+    "setup": "tsx src/cli.ts setup",
+    "db:init": "tsx src/cli.ts db init",
+    "db:status": "tsx src/cli.ts db status",
+    "tags:refresh": "tsx src/cli.ts tags refresh",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts"
+  },
+  "keywords": [
+    "game",
+    "api",
+    "node",
+    "express"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/commander": "^2.12.0",
+    "@types/pg": "^8.15.5",
+    "axios": "^1.12.2",
+    "commander": "^14.0.1",
+    "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
+    "express": "^4.19.0",
+    "helmet": "^7.1.0",
+    "node-fetch": "^3.3.2",
+    "pg": "^8.16.3",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.6.0"
+  }
+}

@@ -1,0 +1,234 @@
+/* Global styles */
+:root {
+  /* Game color scheme */
+  --bg-primary: #021123;
+  --bg-secondary: #232a3a;
+  --bg-accent: #fcb342;
+  --text-primary: #ffffff;
+  --text-secondary: #b4c7d9;
+  --text-accent: #fcb342;
+  
+  /* Tag category colors */
+  --tag-general: #b4c7d9;
+  --tag-artist: #f2ac08;
+  --tag-contributor: silver;
+  --tag-copyright: #d0d;
+  --tag-character: #0a0;
+  --tag-species: #ed5d1f;
+  --tag-meta: #fff;
+  --tag-lore: #282;
+  --tag-invalid: #ff3d3d;
+  
+  /* Status colors */
+  --success: #2ecc40;
+  --success-color: #4ade80;
+  --success-bg: #1a4d3a;
+  --error: #ff4136;
+  --warning: #ff851b;
+  --info: #0074d9;
+  
+  /* Layout */
+  --border-radius: 8px;
+  --shadow-light: 0 2px 16px rgba(0,0,0,0.15);
+  --shadow-heavy: 0 4px 32px rgba(0,0,0,0.25);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-style: italic;
+}
+
+h2 {
+  font-size: 2rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+/* Form elements */
+input, select, textarea, button {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  background: var(--bg-accent);
+  color: var(--bg-primary);
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-light);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+input, select {
+  padding: 0.75rem;
+  border: 2px solid var(--bg-secondary);
+  border-radius: var(--border-radius);
+  background: var(--text-primary);
+  color: var(--bg-primary);
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--bg-accent);
+}
+
+/* Layout utilities */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.gap-8 {
+  gap: 2rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.p-4 {
+  padding: 1rem;
+}
+
+.rounded {
+  border-radius: var(--border-radius);
+}
+
+.shadow {
+  box-shadow: var(--shadow-light);
+}
+
+/* Game-specific styles */
+.game-screen {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  padding-bottom: 120px; /* Space for input bar */
+}
+
+.logo-header {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.logo-header h1 {
+  margin: 0;
+  color: var(--text-accent);
+}
+
+.tag {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  margin: 0.25rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Status indicators */
+.correct {
+  border-color: var(--success) !important;
+  background-color: rgba(46, 204, 64, 0.1);
+}
+
+.incorrect {
+  border-color: var(--error) !important;
+  background-color: rgba(255, 65, 54, 0.1);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}

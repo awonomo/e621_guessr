@@ -1,0 +1,42 @@
+{
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "database": "e6_tag_challenge",
+    "user": "postgres",
+    "password": "your_password_here",
+    "max": 20,
+    "idleTimeoutMillis": 30000,
+    "connectionTimeoutMillis": 2000
+  },
+  "tagRefresh": {
+    "baseUrl": "https://e621.net/db_export",
+    "refreshIntervalHours": 168,
+    "safeDayOffset": 1
+  },
+  "scoring": {
+    "maxPoints": 1000,
+    "categoryWeights": {
+      "0": 1.2,
+      "1": 0.6,
+      "2": 0.8,
+      "3": 0.9,
+      "4": 1.0,
+      "5": 1.1,
+      "6": 0.3,
+      "7": 0.7,
+      "8": 1.5
+    },
+    "sweetSpot": {
+      "0": { "mu": 2.0, "sigma": 1.2 },
+      "1": { "mu": 1.5, "sigma": 1.0 },
+      "2": { "mu": 1.8, "sigma": 0.8 },
+      "3": { "mu": 2.2, "sigma": 1.0 },
+      "4": { "mu": 2.5, "sigma": 1.1 },
+      "5": { "mu": 2.3, "sigma": 1.0 },
+      "6": { "mu": 1.0, "sigma": 0.5 },
+      "7": { "mu": 1.7, "sigma": 0.9 },
+      "8": { "mu": 1.2, "sigma": 0.6 }
+    }
+  }
+}
