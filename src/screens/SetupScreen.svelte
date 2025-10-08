@@ -303,7 +303,7 @@
             id="customCriteria"
             type="text"
             bind:value={customCriteria}
-            placeholder="e.g., cat dog forest"
+            placeholder=""
             maxlength="100"
           />
           <span class="help-text">Space-separated tags to include</span>

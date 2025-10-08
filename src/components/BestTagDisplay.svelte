@@ -16,7 +16,7 @@
   .best-tag {
     font-size: 1.5rem;
     margin-bottom: 2rem;
-    display: flex;
+    /* display: flex; */
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
@@ -35,7 +35,7 @@
   }
   
   .best-tag .points {
-    color: var(--text-accent);
+    color: var(--success-color);
     font-weight: 700;
   }
   

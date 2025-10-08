@@ -15,6 +15,7 @@ export interface DatabaseConfig {
     minPoints: number;
     sweetSpot: Record<number, { mu: number; sigma: number }>;
     categoryWeights: Record<number, number>;
+    manualMultipliers: Record<string, number>;
   };
   tagRefresh: {
     baseUrl: string;
@@ -61,6 +62,57 @@ export const config: DatabaseConfig = {
       6: 0.3, // Invalid - low value
       7: 0.7, // Meta
       8: 1.5  // Lore - extremely rare
+    },
+    // Manual score multipliers for specific tags
+    // These are applied AFTER the base scoring calculation
+    // Values > 1.0 boost the score, values < 1.0 reduce it
+    manualMultipliers: {
+      // Example boosted tags (interesting but undervalued)
+      'anthro': 1.2,           // Very common but fundamental
+      'feral': 1.15,           // Important distinction
+      'solo': 0.8,             // Very common, reduce score
+      'duo': 0.9,              // Common, slight reduction
+      'group': 1.1,            // Less common, slight boost
+      
+      // Quality/artistic tags that deserve recognition
+      'detailed_background': 1.3,
+      'amazing_background': 1.4,
+      'cel_shading': 1.2,
+      
+      // Problematic or overly easy tags
+      'hi_res': 0.5,           // Too easy, most posts have this
+      'digital_media_(artwork)': 0.6, // Very common
+      'simple_background': 0.8, // Common and easy to spot
+      
+      // Technical excellence tags
+      'pixel_(artwork)': 1.3,  // Specific art style recognition
+      'traditional_media_(artwork)': 1.2,
+      'sketch': 0.9,           // Often obvious
+      
+      // Anatomical detail recognition (skill-based)
+      'plantigrade': 1.4,      // Requires anatomical knowledge
+      'digitigrade': 1.3,      // Anatomical knowledge
+      'pawpads': 1.1,          // Detail observation
+      'intersex': 1.5,         
+      'andromorph': 1.5,
+      'gynomorph': 1.5,
+      'proboscis': 3,
+
+      // Story/context tags that show deep understanding
+      'romantic': 1.2,
+      'wholesome': 1.3,
+      'melancholy': 1.4,       // Emotional nuance
+      
+      // Clothing/accessory detail recognition
+      'collar': 1.1,
+      'jewelry': 1.2,
+      'hat': 1.1,
+      
+      // Body type recognition
+      'muscular': 1.1,
+      'overweight': 1.2,
+      'slim': 0.9,
+      'athletic': 1.1
     }
   },
   tagRefresh: {

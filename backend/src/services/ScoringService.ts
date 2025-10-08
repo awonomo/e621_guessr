@@ -14,7 +14,6 @@ export interface E621Tag {
   category: number;
   post_count: number;
   quality?: number;
-  manual_score?: number;
 }
 
 export class ScoringService {
@@ -55,25 +54,24 @@ export class ScoringService {
   }
   
   /**
-   * 3-Layer scoring system with improved distribution (100-10,000 points)
+   * 3-Layer scoring system with improved distribution (100-10000 points)
    */
   private calculateTagScore(tag: E621Tag): number {
-    // Layer 1: Manual overrides
-    if (tag.manual_score !== null && tag.manual_score !== undefined) {
-      return tag.manual_score;
-    }
-    
     // Layer 2: Heuristic scoring with better distribution
     const rarityScore = this.rarityCurve(tag.post_count, tag.category);
     const categoryWeight = config.scoring.categoryWeights[tag.category] || 1.0;
     const quality = tag.quality || 1.0; // Default quality
     
+    // Check for manual multiplier override (NEW FEATURE)
+    const manualMultipliers = config.scoring.manualMultipliers || {};
+    const manualMultiplier = manualMultipliers[tag.name] || 1.0;
+
     // New scoring formula for better distribution:
     // - Use logarithmic interpolation between min and max points
-    // - Apply category weight and quality multipliers
+    // - Apply category weight, quality, and manual multiplier
     // - Ensure minimum score for very common tags
     
-    const minPoints = config.scoring.minPoints;
+    const minPoints = config.scoring.minPoints || 100;
     const maxPoints = config.scoring.maxPoints;
     
     // Convert rarity score (0-1) to logarithmic scale for better distribution
@@ -83,8 +81,8 @@ export class ScoringService {
     // Calculate base score using logarithmic interpolation
     const baseScore = minPoints + (maxPoints - minPoints) * Math.pow(logRarityScore, 0.7);
     
-    // Apply multipliers
-    const finalScore = Math.round(baseScore * categoryWeight * quality);
+    // Apply all multipliers: category weight, quality, and manual multiplier
+    const finalScore = Math.round(baseScore * categoryWeight * quality * manualMultiplier);
     
     // Ensure minimum score
     return Math.max(minPoints, finalScore);
@@ -95,7 +93,7 @@ export class ScoringService {
    */
   private rarityCurve(postCount: number, category: number): number {
     const sweetSpot = config.scoring.sweetSpot[category];
-    const mu = sweetSpot?.mu || 2.5; // Default sweet spot around 100-1000 posts
+    const mu = sweetSpot?.mu || 2.5;
     const sigma = sweetSpot?.sigma || 1.0;
     
     // Log-normal curve
@@ -111,7 +109,7 @@ export class ScoringService {
   private async findTag(query: string): Promise<E621Tag | null> {
     // First try exact match
     let result = await db.query(
-      'SELECT name, category, post_count, quality, manual_score FROM tags WHERE name = $1',
+      'SELECT name, category, post_count, quality FROM tags WHERE name = $1',
       [query]
     );
     
@@ -121,7 +119,7 @@ export class ScoringService {
     
     // Try alias match
     result = await db.query(`
-      SELECT t.name, t.category, t.post_count, t.quality, t.manual_score 
+      SELECT t.name, t.category, t.post_count, t.quality 
       FROM tags t
       JOIN tag_aliases a ON t.name = a.consequent_name
       WHERE a.antecedent_name = $1 AND a.status = 'active'
@@ -133,7 +131,7 @@ export class ScoringService {
     
     // Try fuzzy match using ILIKE
     result = await db.query(`
-      SELECT name, category, post_count, quality, manual_score,
+      SELECT name, category, post_count, quality,
         CASE 
           WHEN name ILIKE $1 THEN 1.0
           WHEN name ILIKE '%' || $2 || '%' THEN 0.8
@@ -151,8 +149,7 @@ export class ScoringService {
         name: row.name,
         category: row.category,
         post_count: row.post_count,
-        quality: row.quality,
-        manual_score: row.manual_score
+        quality: row.quality
       };
     }
     
@@ -189,8 +186,7 @@ export class ScoringService {
           name: tagName,
           category: 0, // Default to general category
           post_count: 1, // Conservative estimate - will get low score
-          quality: 1.0,
-          manual_score: undefined
+          quality: 1.0
         };
       }
       

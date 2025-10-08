@@ -166,7 +166,7 @@
             </button>
           {:else}
             <button class="play-again-button" on:click={playAgain} title="Play Again">
-              Again
+              again
             </button>
           {/if}
         </div>
@@ -288,8 +288,8 @@
   }
   
   .play-again-button {
-    background: var(--accent-primary);
-    color: var(--bg-primary);
+    background: var(--bg-light);
+    color: var(--text-dark);
     border: none;
     padding: 1rem 3rem;
     font-size: 1.25rem;
@@ -297,9 +297,6 @@
     border-radius: 25px;
     cursor: pointer;
     transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    animation: glow 2s ease-in-out infinite;
   }
   
   .play-again-button:hover {
