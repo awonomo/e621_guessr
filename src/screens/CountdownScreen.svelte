@@ -56,10 +56,10 @@
     font-weight: 900;
     color: var(--text-accent);
     margin: 0;
-    text-shadow: 
+    /* text-shadow: 
       0 0 20px rgba(252, 179, 66, 0.5),
       0 0 40px rgba(252, 179, 66, 0.3),
-      0 4px 8px rgba(0, 0, 0, 0.3);
+      0 4px 8px rgba(0, 0, 0, 0.3); */
     animation: pulse 0.8s ease-in-out;
   }
 

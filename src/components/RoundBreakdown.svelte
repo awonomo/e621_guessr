@@ -52,7 +52,10 @@
   function getTagScore(tag: string, category: TagCategory): number {
     // Check if this tag was guessed and get its backend-calculated score
     const guessedInCategory = roundData.correctGuesses[category] || [];
-    const guessedTag = guessedInCategory.find(entry => entry.tag === tag);
+    const guessedTag = guessedInCategory.find(entry => 
+      entry.tag === tag || // Direct match
+      entry.actualTag === tag // Alias match - the guess was aliased to this tag
+    );
     
     if (guessedTag) {
       return guessedTag.score;
@@ -93,7 +96,10 @@
   
   function isTagGuessed(tag: string, category: TagCategory): boolean {
     const guessedInCategory = roundData.correctGuesses[category] || [];
-    return guessedInCategory.some(entry => entry.tag === tag);
+    return guessedInCategory.some(entry => 
+      entry.tag === tag || // Direct match
+      entry.actualTag === tag // Alias match - the guess was aliased to this tag
+    );
   }
   
   function getCategoryDisplayOrder() {
@@ -133,7 +139,7 @@
 
 <div class="round-breakdown">
   <div class="round-content">
-    <h2 class="round-title">ROUND {roundNumber}</h2>
+    <!-- <h2 class="round-title">ROUND {roundNumber}</h2> -->
     
     <div class="post-section">
       <PostThumbnail post={roundData.post} size="medium" />
@@ -162,7 +168,7 @@
               {#each tags.sort((a, b) => getTagScore(b.tag, b.originalCategory) - getTagScore(a.tag, a.originalCategory)) as tagInfo}
                 {@const points = getTagScore(tagInfo.tag, tagInfo.originalCategory)}
                 {@const wasGuessed = isTagGuessed(tagInfo.tag, tagInfo.originalCategory)}
-                <div class="tag-item {tagInfo.originalCategory}" class:guessed={wasGuessed}>
+                <div class="tag-base tag-{tagInfo.originalCategory}" class:tag-guessed={wasGuessed}>
                   <span class="tag-name">{tagInfo.tag}</span>
                   <span class="tag-points">+{points}</span>
                 </div>
@@ -231,78 +237,19 @@
     gap: 0.75rem;
   }
   
-  .tag-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  .tag-base {
+    /* Override shared styles for breakdown grid layout */
     padding: 0.5rem 1rem;
-    background: var(--bg-secondary);
-    border-radius: 8px;
-    border-left: 3px solid;
+    margin-bottom: 0; /* Reset margin for grid layout */
     font-size: 0.95rem;
-    transition: all 0.2s ease;
+    animation: none; /* Disable slide-in animation */
+    background: var(--bg-secondary);
   }
   
-  .tag-item.guessed {
-    background: var(--success-bg);
-    border-left-color: var(--success-color);
-  }
-  
-  .tag-name {
-    font-weight: 600;
-  }
-  
-  .tag-points {
-    font-size: 0.875rem;
-    opacity: 0.8;
-    font-weight: 700;
-  }
-  
-  /* Tag category colors */
-  .general { 
-    color: var(--tag-general); 
-    border-left-color: var(--tag-general); 
-  }
-  .artist { 
-    color: var(--tag-artist); 
-    border-left-color: var(--tag-artist); 
-  }
-  .copyright { 
-    color: var(--tag-copyright); 
-    border-left-color: var(--tag-copyright); 
-  }
-  .character { 
-    color: var(--tag-character); 
-    border-left-color: var(--tag-character); 
-  }
-  .species { 
-    color: var(--tag-species); 
-    border-left-color: var(--tag-species); 
-  }
-  .meta { 
-    color: var(--tag-meta); 
-    border-left-color: var(--tag-meta); 
-  }
-  .lore { 
-    color: var(--tag-lore); 
-    border-left-color: var(--tag-lore); 
-  }
-  .invalid { 
-    color: var(--tag-invalid); 
-    border-left-color: var(--tag-invalid); 
-  }
-  
-  /* Guessed tags override colors */
-  .tag-item.guessed.general,
-  .tag-item.guessed.artist,
-  .tag-item.guessed.copyright,
-  .tag-item.guessed.character,
-  .tag-item.guessed.species,
-  .tag-item.guessed.meta,
-  .tag-item.guessed.lore,
-  .tag-item.guessed.invalid {
-    color: var(--success-color);
-    border-left-color: var(--success-color);
+  .tag-guessed {
+    background: var(--success-bg) !important;
+    color: var(--success-color) !important;
+    border-color: var(--success-color) !important;
   }
   
   .loading-indicator {

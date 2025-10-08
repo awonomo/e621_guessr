@@ -57,22 +57,22 @@
   <div class="menu">
     <div class="menu-buttons">
       <button class="primary-button" onclick={startNormalGame}>
-        🎮 Play Game
+        Play Game
       </button>
       
       {#if $dailyChallenge}
         <button class="daily-button" onclick={startDailyChallenge}>
-          📅 Daily Challenge
+          Daily Challenge
           <span class="daily-date">{$dailyChallenge.date}</span>
         </button>
       {/if}
       
       <button class="secondary-button" onclick={toggleStats}>
-        📊 Statistics
+        Statistics
       </button>
       
       <button class="secondary-button" onclick={() => alert('Coming soon!')}>
-        ⚙️ Settings
+        Settings
       </button>
     </div>
   </div>

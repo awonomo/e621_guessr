@@ -19,11 +19,18 @@
   let canScroll = false;
   let tagOrder = 0;
   
-  // Track previous guesses to detect new ones
+  // Track previous guesses to detect new ones and manage animations
   let previousGuesses = new Set<string>();
+  let newlyAddedTags = new Set<string>();
   
-  // Convert correctGuesses to sorted array with animations - only when actually needed
-  $: {
+  // Simple reactive statement to debug prop changes
+  $: console.log('[TagList] Simple reactive - correctGuesses changed:', correctGuesses);
+  
+  // Convert correctGuesses to sorted array - sort by most recent guess (order)
+  $: if (correctGuesses) {
+    console.log('[TagList] Reactive statement triggered');
+    console.log('[TagList] correctGuesses:', correctGuesses);
+    
     const currentGuesses = new Set<string>();
     
     // First, collect all current guesses to check if anything actually changed
@@ -38,8 +45,14 @@
     
     // Only update if there are actual new guesses
     const hasNewGuesses = Array.from(currentGuesses).some(guess => !previousGuesses.has(guess));
+    console.log('[TagList] hasNewGuesses:', hasNewGuesses);
     
     if (hasNewGuesses || tagEntries.length === 0) {
+      console.log('[TagList] Updating tag entries...');
+      
+      // Clear newly added tags from previous update
+      newlyAddedTags.clear();
+      
       const newEntries: TagEntry[] = [];
       
       Object.entries(correctGuesses).forEach(([category, tagScoreEntries]) => {
@@ -47,9 +60,10 @@
           tagScoreEntries.forEach(scoreEntry => {
             const uniqueGuessKey = `${scoreEntry.tag}-${category}`;
             
-            // If this is a new guess, increment order
+            // If this is a new guess, increment order and mark as newly added
             if (!previousGuesses.has(uniqueGuessKey)) {
               tagOrder++;
+              newlyAddedTags.add(uniqueGuessKey);
             }
             
             newEntries.push({
@@ -59,22 +73,26 @@
               points: scoreEntry.score,
               order: tagOrder,
               wasFromAlias: scoreEntry.wasFromAlias,
-              uniqueKey: `${scoreEntry.tag}-${category}-${tagOrder}` // Unique key combining tag, category, and order
+              uniqueKey: `${scoreEntry.tag}-${category}-${scoreEntry.score}` // Use score to ensure uniqueness
             });
           });
         }
       });
       
-      // Sort by points (descending), then by order (ascending) for ties
-      newEntries.sort((a, b) => {
-        if (a.points !== b.points) {
-          return b.points - a.points;
-        }
-        return a.order - b.order;
-      });
+      // Sort by most recent guess (order descending) - newest first
+      newEntries.sort((a, b) => b.order - a.order);
       
+      console.log('[TagList] Final newEntries (sorted by recency):', newEntries);
       tagEntries = newEntries;
       previousGuesses = currentGuesses;
+      
+      // Clear newly added tags after a short delay to remove animation
+      setTimeout(() => {
+        newlyAddedTags.clear();
+        newlyAddedTags = new Set(newlyAddedTags); // Trigger reactivity
+      }, 500);
+    } else {
+      console.log('[TagList] No update needed - no new guesses');
     }
   }
   
@@ -89,11 +107,8 @@
   
   function scrollToNewTag() {
     if (containerElement && tagEntries.length > 0) {
-      // Scroll to show the most recent tag
-      const lastTagElement = containerElement.querySelector('.tag-item:last-child');
-      if (lastTagElement) {
-        lastTagElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
+      // Scroll to top to show the most recent tag
+      containerElement.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
   
@@ -109,11 +124,17 @@
     bind:this={containerElement}
     class:scrollable={canScroll}
   >
+    <!-- Debug: Show tagEntries length -->
+    <!-- <div style="color: red; font-size: 12px; margin-bottom: 10px;">
+      Debug: tagEntries.length = {tagEntries.length}
+    </div> -->
+    
     {#each tagEntries as tagEntry, index (tagEntry.uniqueKey)}
       <div 
-        class="tag-item {tagEntry.category}"
-        class:special-category={tagEntry.category === 'artist' || tagEntry.category === 'character'}
-        class:alias-tag={tagEntry.wasFromAlias}
+        class="tag-base tag-{tagEntry.category}"
+        class:tag-special-category={tagEntry.category === 'artist' || tagEntry.category === 'character'}
+        class:tag-alias={tagEntry.wasFromAlias}
+        class:tag-new={newlyAddedTags.has(`${tagEntry.tag}-${tagEntry.category}`)}
       >
         <span class="tag-name">
           {tagEntry.tag}
@@ -147,13 +168,16 @@
     position: relative;
     flex: 1;
     min-height: 0;
+    max-height: none; /* Remove viewport constraint - let parent control height */
     display: flex;
     flex-direction: column;
+    overflow: hidden; /* Ensure container doesn't expand */
   }
   
   .tag-list {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden; /* Prevent horizontal overflow */
     padding-right: 0.5rem;
     scroll-behavior: smooth;
   }
@@ -176,89 +200,8 @@
     background: var(--text-accent);
   }
   
-  .tag-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.375rem;
-    border-radius: 6px;
-    font-size: 1.125rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    animation: slideIn 0.5s ease-out;
-    border-left: 4px solid;
-  }
-  
-  .tag-item.special-category {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(4px);
-  }
-  
-  .tag-item.alias-tag {
-    opacity: 0.9;
-    background: rgba(255, 255, 255, 0.05);
-  }
-  
-  .alias-info {
-    opacity: 0.7;
-    font-size: 0.85em;
-    margin-left: 0.5rem;
-  }
-  
-  .tag-name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  
-  .tag-points {
-    font-size: 1rem;
-    opacity: 0.8;
-    margin-left: 0.5rem;
-    font-weight: 700;
-  }
-  
-  /* Tag category colors */
-  .tag-item.general { 
-    color: var(--tag-general); 
-    border-left-color: var(--tag-general);
-  }
-  .tag-item.artist { 
-    color: var(--tag-artist); 
-    border-left-color: var(--tag-artist);
-    background: rgba(242, 172, 8, 0.15);
-  }
-  .tag-item.contributor { 
-    color: var(--tag-contributor); 
-    border-left-color: var(--tag-contributor);
-  }
-  .tag-item.copyright { 
-    color: var(--tag-copyright); 
-    border-left-color: var(--tag-copyright);
-  }
-  .tag-item.character { 
-    color: var(--tag-character); 
-    border-left-color: var(--tag-character);
-    background: rgba(0, 170, 0, 0.15);
-  }
-  .tag-item.species { 
-    color: var(--tag-species); 
-    border-left-color: var(--tag-species);
-  }
-  .tag-item.meta { 
-    color: var(--tag-meta); 
-    border-left-color: var(--tag-meta);
-  }
-  .tag-item.lore { 
-    color: var(--tag-lore); 
-    border-left-color: var(--tag-lore);
-  }
-  .tag-item.invalid { 
-    color: var(--tag-invalid); 
-    border-left-color: var(--tag-invalid);
-  }
+  /* Component-specific tag overrides */
+  /* No longer needed - styles are in app.css */
   
   .empty-state {
     display: flex;
@@ -308,17 +251,6 @@
     background: linear-gradient(transparent, var(--bg-primary));
     pointer-events: none;
     opacity: 0.5;
-  }
-  
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateX(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
   }
   
   @keyframes bounce {

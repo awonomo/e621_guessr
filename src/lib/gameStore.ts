@@ -66,7 +66,9 @@ export const isPaused = derived(appState, $state => $state.isPaused);
 
 export const currentRound = derived(appState, $state => {
   if (!$state.currentSession || $state.currentSession.rounds.length === 0) return null;
-  return $state.currentSession.rounds[$state.currentSession.currentRound] || null;
+  const round = $state.currentSession.rounds[$state.currentSession.currentRound] || null;
+  console.log('[CurrentRound Store] Updated:', round?.correctGuesses);
+  return round;
 });
 
 export const isGameActive = derived(appState, $state => $state.currentSession?.isActive === true);
@@ -349,20 +351,50 @@ export const gameActions = {
       };
 
       // Add to correct guesses
-      if (!round.correctGuesses[category]) {
-        round.correctGuesses[category] = [];
+      const newCorrectGuesses = { ...round.correctGuesses };
+      if (!newCorrectGuesses[category]) {
+        newCorrectGuesses[category] = [];
       }
-      round.correctGuesses[category]!.push(tagEntry);
+      newCorrectGuesses[category] = [...(newCorrectGuesses[category] || []), tagEntry];
       
-      // Update scores
-      round.score += tagEntry.score;
-      session.totalScore += tagEntry.score;
+      console.log('[GameStore] Added tag to correctGuesses:', tagEntry);
+      console.log('[GameStore] Updated correctGuesses:', newCorrectGuesses);
       
-      // Update stats
-      state.userStats.totalTagsGuessed++;
+      // Create new round object with updated data
+      const newRound = {
+        ...round,
+        correctGuesses: newCorrectGuesses,
+        score: round.score + tagEntry.score,
+        totalGuesses: round.totalGuesses
+      };
       
-      return state;
+      // Create new session with updated round and total score
+      const newSession = {
+        ...session,
+        rounds: session.rounds.map((r, index) => 
+          index === session.currentRound ? newRound : r
+        ),
+        totalScore: session.totalScore + tagEntry.score
+      };
+      
+      console.log('[GameStore] Created new round:', newRound);
+      console.log('[GameStore] Created new session:', newSession);
+      
+      // Update stats and return completely new state
+      const newState = {
+        ...state,
+        currentSession: newSession,
+        userStats: {
+          ...state.userStats,
+          totalTagsGuessed: state.userStats.totalTagsGuessed + 1
+        }
+      };
+      
+      console.log('[GameStore] Created new state:', newState);
+      return newState;
     });
+
+    console.log('[GameStore] appState.update completed');
 
     return {
       guess,

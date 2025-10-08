@@ -131,24 +131,26 @@
     <button class="icon-button quit-button" on:click={quitGame} title="Quit Game">
       ✕
     </button>
-    
+
+    <h1 class="round-title">ROUND {roundNumber}</h1>
+
     <button 
       class="icon-button next-button glowing" 
       on:click={nextRound} 
       title="Next Round"
     >
       {#if $canAdvanceRound}
-        ⏭️
+        ➔
       {:else}
-        🏁
+        ➔
       {/if}
     </button>
   </div>
 
   <!-- Static Round Header -->
-  <div class="round-header">
+  <!-- <div class="round-header">
     <h1 class="round-title">ROUND {roundNumber}</h1>
-  </div>
+  </div> -->
 
   <!-- Scrollable Content Container -->
   <div 
@@ -253,7 +255,7 @@
   }
   
   .icon-button:hover {
-    background: var(--accent-primary);
+    background: var(--bg-light);
     color: var(--bg-primary);
     transform: scale(1.05);
   }

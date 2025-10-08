@@ -8,7 +8,7 @@
 
 <div class="best-tag">
   <span class="label">best tag:</span>
-  <span class="tag-name {category}">{tag}</span>
+  <span class="tag-name tag-{category}">{tag}</span>
   <span class="points">+{points}</span>
 </div>
 
@@ -38,16 +38,6 @@
     color: var(--text-accent);
     font-weight: 700;
   }
-  
-  /* Tag category colors */
-  .general { color: var(--tag-general); }
-  .artist { color: var(--tag-artist); }
-  .copyright { color: var(--tag-copyright); }
-  .character { color: var(--tag-character); }
-  .species { color: var(--tag-species); }
-  .meta { color: var(--tag-meta); }
-  .lore { color: var(--tag-lore); }
-  .invalid { color: var(--tag-invalid); }
   
   /* Responsive Design */
   @media (max-width: 768px) {

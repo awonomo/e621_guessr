@@ -95,7 +95,7 @@
       <ScoreDisplay score={$currentRound?.score || 0} />
       
       <TagList 
-        correctGuesses={$currentRound?.correctGuesses || {}}
+        correctGuesses={$currentRound?.correctGuesses}
       />
       
       <div class="tag-progress">
@@ -113,11 +113,12 @@
 
 <style>
   .gameplay-screen {
-    min-height: 100vh;
+    height: 100vh; /* Fixed height instead of min-height */
     background: var(--bg-primary);
     color: var(--text-primary);
     display: flex;
     flex-direction: column;
+    overflow: hidden; /* Prevent page from growing */
   }
   
   .top-bar {
@@ -166,6 +167,8 @@
     flex: 1;
     padding: 0 2rem;
     min-height: 0; /* Important for flex child */
+    height: 100%; /* Ensure it takes full available height */
+    overflow: hidden; /* Prevent grid from expanding */
   }
   
   .post-area {
@@ -194,6 +197,8 @@
     gap: 1.5rem;
     padding: 1rem 0;
     min-height: 0;
+    height: 100%;
+    overflow: hidden; /* Prevent scoreboard from expanding */
   }
   
   .tag-progress {

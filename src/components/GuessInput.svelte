@@ -151,7 +151,7 @@
       border-radius: 4px;
       z-index: 1000;
       animation: feedbackSlide 2s ease-out forwards;
-      border-left: 3px solid ${type === 'success' ? '#4CAF50' : type === 'warning' ? '#FF9800' : '#F44336'};
+      border: 3px solid ${type === 'success' ? '#4CAF50' : type === 'warning' ? '#FF9800' : '#F44336'};
     `;
     
     // Add animation styles
@@ -249,7 +249,7 @@
   .input-wrapper {
     display: flex;
     align-items: center;
-    background: var(--bg-primary);
+    background: var(--bg-light);
     border: 2px solid var(--accent-primary);
     border-radius: 25px;
     padding: 0.25rem;
@@ -271,7 +271,7 @@
     border: none;
     padding: 0.75rem 1rem;
     font-size: 1.25rem;
-    color: var(--text-primary);
+    color: var(--text-dark);
     outline: none;
     font-family: inherit;
     font-weight: 500;
