@@ -98,4 +98,54 @@ router.get('/health', async (req, res) => {
   }
 });
 
+/**
+ * Debug endpoint to see detailed scoring breakdown
+ */
+router.post('/debug-score', async (req, res) => {
+  try {
+    const { guess } = req.body;
+    
+    if (!guess || typeof guess !== 'string') {
+      return res.status(400).json({ 
+        error: 'Invalid request',
+        message: 'Guess must be a non-empty string'
+      });
+    }
+    
+    // Get the actual scoring result
+    const result = await ScoringService.scoreTag(guess);
+    
+    // Import multiplier functions for detailed breakdown
+    const { getTagMultiplier, getContextualMultiplier, getTagMultiplierBreakdown } = await import('../config/multipliers.js');
+    
+    if (result.actualTag) {
+      const manualMultiplier = getTagMultiplier(result.actualTag);
+      const contextualMultiplier = getContextualMultiplier(result.actualTag, result.category);
+      const breakdown = getTagMultiplierBreakdown(result.actualTag, result.category);
+      
+      res.json({
+        ...result,
+        debug: {
+          manualMultiplier,
+          contextualMultiplier,
+          breakdown
+        }
+      });
+    } else {
+      res.json({
+        ...result,
+        debug: {
+          message: 'Tag not found in database'
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error in debug scoring:', error);
+    res.status(500).json({ 
+      error: 'Failed to debug score tag',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 export default router;

@@ -6,7 +6,7 @@
   interface Props {
     disabled?: boolean;
     placeholder?: string;
-    onsubmit?: (event: { guess: string }) => void;
+    onsubmit?: (event: { guess: string }) => Promise<any> | void;
   }
   
   let { disabled = false, placeholder = "Enter your guess...", onsubmit }: Props = $props();
@@ -54,7 +54,7 @@
     originalInput = '';
   }
   
-  function handleSubmit() {
+  async function handleSubmit() {
     if (isSubmitting || disabled || !inputValue.trim()) return;
     
     const guess = inputValue.trim(); // Input is already normalized
@@ -67,20 +67,36 @@
     
     isSubmitting = true;
     
-    // Add to recent guesses for duplicate checking
-    recentGuesses = [guess, ...recentGuesses.slice(0, 4)]; // Keep last 5
+    try {
+      // Call the submit callback and wait for result
+      const result = await onsubmit?.({ guess });
+      
+      // Check if the guess was rate-limited
+      if (result && result.rateLimited) {
+        showFeedback('Too many guesses! Wait a moment...', 'warning');
+        // Don't clear input, don't add to history - let player try again
+        isSubmitting = false;
+        return;
+      }
+      
+      // Only clear input and add to history for non-rate-limited guesses
+      // Add to recent guesses for duplicate checking
+      recentGuesses = [guess, ...recentGuesses.slice(0, 4)]; // Keep last 5
+      
+      // Add to command history for arrow key navigation (keep last 10)
+      commandHistory = [guess, ...commandHistory.slice(0, 9)]; 
+      
+      // Clear input and reset state
+      inputValue = '';
+      historyIndex = -1;
+      originalInput = '';
+      
+    } catch (error) {
+      console.error('Error submitting guess:', error);
+      showFeedback('Error submitting guess', 'error');
+    }
     
-    // Add to command history for arrow key navigation (keep last 10)
-    commandHistory = [guess, ...commandHistory.slice(0, 9)]; 
-    
-    // Call the submit callback
-    onsubmit?.({ guess });
-    
-    // Clear input and reset state
-    inputValue = '';
     isSubmitting = false;
-    historyIndex = -1;
-    originalInput = '';
     
     // Refocus input
     if (inputElement) {

@@ -4,24 +4,6 @@
   
   let showStats = $state(false);
   
-  async function loadDailyChallenge() {
-    try {
-      const response = await fetch('/api/daily');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          gameActions.setDailyChallenge(data.data);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load daily challenge:', error);
-    }
-  }
-  
-  onMount(() => {
-    loadDailyChallenge();
-  });
-  
   function startNormalGame() {
     gameActions.navigateToSetup();
   }
@@ -60,12 +42,12 @@
         Play Game
       </button>
       
-      {#if $dailyChallenge}
-        <button class="daily-button" onclick={startDailyChallenge}>
-          Daily Challenge
-          <span class="daily-date">{$dailyChallenge.date}</span>
-        </button>
-      {/if}
+      <button 
+        class="daily-button" 
+        onclick={startDailyChallenge}
+      >
+        Play Daily Challenge
+      </button>
       
       <button class="secondary-button" onclick={toggleStats}>
         Statistics

@@ -95,12 +95,28 @@ CREATE TABLE IF NOT EXISTS user_stats (
 
 -- Daily challenges table
 CREATE TABLE IF NOT EXISTS daily_challenges (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    challenge_date DATE UNIQUE NOT NULL,
-    post_ids INTEGER[] NOT NULL,
-    settings JSONB NOT NULL,
+    date DATE PRIMARY KEY,
+    posts JSONB NOT NULL, -- Store the 5 posts as JSON
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Daily challenge results table
+CREATE TABLE IF NOT EXISTS daily_results (
+    id SERIAL PRIMARY KEY,
+    date DATE NOT NULL,
+    player_name VARCHAR(255) NOT NULL,
+    score INTEGER NOT NULL,
+    rounds JSONB NOT NULL, -- Store round data as JSON
+    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Ensure one submission per player per day
+    UNIQUE(date, player_name)
+);
+
+-- Indexes for daily tables
+CREATE INDEX IF NOT EXISTS idx_daily_challenges_date ON daily_challenges(date);
+CREATE INDEX IF NOT EXISTS idx_daily_results_date ON daily_results(date);
+CREATE INDEX IF NOT EXISTS idx_daily_results_score ON daily_results(date, score DESC);
 
 -- Leaderboards table
 CREATE TABLE IF NOT EXISTS leaderboard_entries (

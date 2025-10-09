@@ -10,19 +10,34 @@ export interface E621Tag {
     category: number;
     post_count: number;
     quality?: number;
-    manual_score?: number;
 }
 export declare class ScoringService {
+    /**
+     * Debug method to get detailed scoring breakdown for visualization
+     */
+    getDetailedScoring(postCount: number, category: number): {
+        rarityScore: number;
+        baseScore: number;
+        finalScore: number;
+        parameters: {
+            mu: number;
+            sigma: number;
+            categoryWeight: number;
+            minPoints: number;
+            maxPoints: number;
+        };
+    };
     /**
      * Score a single tag guess - the main scoring method
      */
     scoreTag(guess: string): Promise<TagScore>;
     /**
-     * 3-Layer scoring system
+     * Calculate tag score using simplified single-stage algorithm (100-10000 points)
      */
     private calculateTagScore;
     /**
-     * Rarity curve calculation - bell-shaped curve over log(post_count)
+     * Rarity curve calculation - single-stage bell curve with power scaling
+     * Combines Gaussian distribution with built-in score spreading
      */
     private rarityCurve;
     /**
@@ -31,6 +46,7 @@ export declare class ScoringService {
     private findTag;
     /**
      * Layer 3: Live API fallback for new tags
+     * Only called when tag is not found in local database
      */
     private getTagFromAPI;
 }

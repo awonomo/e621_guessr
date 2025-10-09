@@ -20,7 +20,6 @@ export const config = {
     },
     manualMultipliers: {
       'anthro': 1.2,
-      'gynomorph': 1.5,
       // ... other multipliers
     }
   }
@@ -96,16 +95,6 @@ manualMultipliers: {
 - **0.5** = Half score (for overly easy tags)
 - **1.5** = 50% bonus (for skill-requiring tags)
 
-### When to Use Multipliers:
-✅ **Boost scores for:**
-- Tags requiring skill/knowledge (`plantigrade`, `digitigrade`)
-- Undervalued tags (`these_arent_my_glasses`)
-
-❌ **Reduce scores for:**
-- Overly common/easy tags (`hi_res`, `digital_media_(artwork)`)
-- Tags visible without skill (`simple_background`)
-
-### Testing Your Multipliers:
 ```bash
 # Test a tag with multiplier
 npm run cli -- tags search anthro     # Should show boosted score
@@ -117,15 +106,6 @@ npm run cli -- tags search dragon     # Should show normal score
 npm run cli -- tags search hi_res     # Should show reduced score
 ```
 
-### Live Example Results:
-Based on current config:
-- `anthro` (1.2x): **148 points** (boosted from ~123)
-- `gynomorph` (1.5x): **725 points** (boosted from ~483)  
-- `hi_res` (0.5x): **100 points** (reduced from ~200)
-- `dragon` (no multiplier): **121 points** (normal scoring)
-
-## 🚀 Testing Your Changes
-
 ### Quick Test Workflow:
 1. **Edit values in database.ts**
 2. **Restart your backend server**:
@@ -136,6 +116,8 @@ Based on current config:
    ```bash
    npm run cli -- tags search "some_tag"
    ```
+   
+   > **Note**: The CLI command is `tags search`, not `tags score`. The `search` command both finds the tag AND calculates its score.
 
 ### Example Test:
 Let's say you want to make Lore tags even more rewarding. Change in `database.ts`:
@@ -150,7 +132,7 @@ categoryWeights: {
 
 Restart server, then test:
 ```bash
-npm run cli -- tags score "backstory"
+npm run cli -- tags search "backstory"
 ```
 
 ## 🔍 What Each Parameter Controls:

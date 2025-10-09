@@ -12,28 +12,29 @@ export const config = {
         connectionTimeoutMillis: 2000,
     },
     scoring: {
-        maxPoints: 1000,
+        maxPoints: 10000,
+        minPoints: 100,
         sweetSpot: {
             0: { mu: 2.5, sigma: 0.8 }, // General
             1: { mu: 1.8, sigma: 0.7 }, // Artist
-            2: { mu: 1.5, sigma: 0.6 }, // Contributor
+            2: { mu: 1.8, sigma: 0.6 }, // Contributor
             3: { mu: 2.2, sigma: 0.7 }, // Copyright
-            4: { mu: 2.0, sigma: 0.8 }, // Character
+            4: { mu: 1.7, sigma: 0.8 }, // Character
             5: { mu: 2.3, sigma: 0.7 }, // Species
             6: { mu: 1.0, sigma: 0.5 }, // Invalid
-            7: { mu: 1.7, sigma: 0.6 }, // Meta
-            8: { mu: 1.2, sigma: 0.4 } // Lore
+            7: { mu: 3.5, sigma: 0.6 }, // Meta
+            8: { mu: 3.8, sigma: 0.4 } // Lore
         },
         categoryWeights: {
-            0: 1.2, // General - hardest
-            1: 0.6, // Artist - often visible signatures
-            2: 0.8, // Contributor
-            3: 0.9, // Copyright
-            4: 1.0, // Character - baseline
-            5: 1.1, // Species
-            6: 0.3, // Invalid - low value
-            7: 0.7, // Meta
-            8: 1.5 // Lore - extremely rare
+            0: 1, // General
+            1: 0.2, // Artist
+            2: 1, // Contributor
+            3: 1, // Copyright
+            4: 1.5, // Character
+            5: 1.3, // Species
+            6: 1, // Invalid
+            7: 1, // Meta
+            8: 1.3 // Lore
         }
     },
     tagRefresh: {

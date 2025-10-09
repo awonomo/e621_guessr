@@ -114,7 +114,7 @@ router.get('/', async (req, res, next) => {
     
     const response = await fetch(apiUrl, {
       headers: {
-        'User-Agent': USER_AGENT,
+        'User-Agent': 'awonomo/e621guessr by awonomo',
         'Accept': 'application/json'
       }
     });

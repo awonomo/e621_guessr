@@ -2,10 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { postsRouter } from './routes/posts.js';
-import { dailyRouter } from './routes/daily.js';
+import dailyRouter from './routes/daily.js';
 import { statsRouter } from './routes/stats.js';
 import scoringRouter from './routes/scoring.js';
 import tagsRouter from './routes/tags.js';
+import debugRouter from './routes/debug.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { rateLimitMiddleware } from './middleware/rateLimit.js';
 
@@ -43,6 +44,7 @@ app.use('/api/daily', dailyRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/scoring', scoringRouter);
 app.use('/api/tags', tagsRouter);
+app.use('/api/debug', debugRouter);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -63,6 +65,7 @@ app.listen(PORT, () => {
   console.log(`📅 Daily API: http://localhost:${PORT}/api/daily`);
   console.log(`🏆 Scoring API: http://localhost:${PORT}/api/scoring`);
   console.log(`🏷️  Tags API: http://localhost:${PORT}/api/tags`);
+  console.log(`🔍 Debug API: http://localhost:${PORT}/api/debug/scoring-curves`);
 });
 
 export default app;

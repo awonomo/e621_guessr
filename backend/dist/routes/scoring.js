@@ -25,6 +25,50 @@ router.post('/score', async (req, res) => {
     }
 });
 /**
+ * Score multiple tags in bulk (for round breakdown)
+ */
+router.post('/bulk', async (req, res) => {
+    try {
+        const { guesses } = req.body;
+        if (!Array.isArray(guesses) || guesses.length === 0) {
+            return res.status(400).json({
+                error: 'Invalid request',
+                message: 'Guesses must be a non-empty array of strings'
+            });
+        }
+        // Limit to prevent abuse
+        if (guesses.length > 2000) {
+            return res.status(400).json({
+                error: 'Too many guesses',
+                message: 'Maximum 2000 tags per bulk request'
+            });
+        }
+        const results = await Promise.all(guesses.map(async (guess) => {
+            try {
+                return await ScoringService.scoreTag(guess);
+            }
+            catch (error) {
+                console.warn(`Failed to score tag "${guess}":`, error);
+                return null;
+            }
+        }));
+        // Filter out failed results
+        const validResults = results.filter(result => result !== null);
+        res.json({
+            results: validResults,
+            successful: validResults.length,
+            total: guesses.length
+        });
+    }
+    catch (error) {
+        console.error('Error in bulk scoring:', error);
+        res.status(500).json({
+            error: 'Failed to score tags',
+            message: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+/**
  * Health check for scoring service
  */
 router.get('/health', async (req, res) => {
@@ -41,6 +85,52 @@ router.get('/health', async (req, res) => {
         res.status(500).json({
             status: 'error',
             message: 'Scoring service unavailable'
+        });
+    }
+});
+/**
+ * Debug endpoint to see detailed scoring breakdown
+ */
+router.post('/debug-score', async (req, res) => {
+    try {
+        const { guess } = req.body;
+        if (!guess || typeof guess !== 'string') {
+            return res.status(400).json({
+                error: 'Invalid request',
+                message: 'Guess must be a non-empty string'
+            });
+        }
+        // Get the actual scoring result
+        const result = await ScoringService.scoreTag(guess);
+        // Import multiplier functions for detailed breakdown
+        const { getTagMultiplier, getContextualMultiplier, getTagMultiplierBreakdown } = await import('../config/multipliers.js');
+        if (result.actualTag) {
+            const manualMultiplier = getTagMultiplier(result.actualTag);
+            const contextualMultiplier = getContextualMultiplier(result.actualTag, result.category);
+            const breakdown = getTagMultiplierBreakdown(result.actualTag, result.category);
+            res.json({
+                ...result,
+                debug: {
+                    manualMultiplier,
+                    contextualMultiplier,
+                    breakdown
+                }
+            });
+        }
+        else {
+            res.json({
+                ...result,
+                debug: {
+                    message: 'Tag not found in database'
+                }
+            });
+        }
+    }
+    catch (error) {
+        console.error('Error in debug scoring:', error);
+        res.status(500).json({
+            error: 'Failed to debug score tag',
+            message: error instanceof Error ? error.message : 'Unknown error'
         });
     }
 });

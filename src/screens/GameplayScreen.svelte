@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { gameActions, currentRound, currentSession, isGameActive, isPaused } from '../lib/gameStore';
+  import { gameActions, isGameActive, isPaused, currentRound, currentSession } from '../lib/gameStore.js';
   import PostViewer from '../components/PostViewer.svelte';
   import GuessInput from '../components/GuessInput.svelte';
-  import ScoreDisplay from '../components/ScoreDisplay.svelte';
   import TagList from '../components/TagList.svelte';
   import Timer from '../components/Timer.svelte';
-  
-  async function handleGuess(event: { guess: string }) {
+  import ScoreDisplay from '../components/ScoreDisplay.svelte';
+
+  async function handleGuessSubmit(event: { guess: string }) {
     if (!$isPaused && $isGameActive) {
       try {
         const result = await gameActions.submitGuess(event.guess);
@@ -17,13 +17,16 @@
           console.warn('Rate limited: Too many incorrect guesses');
         }
         
-        // The GuessInput component will handle its own feedback
+        // Return the result so GuessInput can handle it
+        return result;
       } catch (error) {
         console.error('Error submitting guess:', error);
+        return { error: true };
       }
     }
+    return null;
   }
-  
+
   function togglePause() {
     gameActions.togglePause();
   }
@@ -106,7 +109,7 @@
 
   <!-- Guess Input (Fixed at bottom) -->
   <GuessInput 
-    onsubmit={handleGuess}
+    onsubmit={handleGuessSubmit}
     disabled={$isPaused || !$isGameActive}
   />
 </div>

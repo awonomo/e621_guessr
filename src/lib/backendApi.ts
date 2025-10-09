@@ -87,12 +87,43 @@ class BackendApiService {
   }
 
   /**
+   * Resolve a tag guess to its canonical form (handles aliases)
+   */
+  async resolveTag(guess: string): Promise<string | null> {
+    console.log('[BackendAPI] Resolving tag:', guess);
+    
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/api/tags/search/${encodeURIComponent(guess)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        console.log('[BackendAPI] Tag not found:', guess);
+        return null;
+      }
+
+      const result = await response.json();
+      console.log('[BackendAPI] Resolved to:', result.name);
+      return result.name || null;
+    } catch (error) {
+      console.warn('[BackendAPI] Tag resolution failed:', error);
+      return null;
+    }
+  }
+
+  /**
    * Check if a tag exists in the database (without scoring)
    */
   async checkTag(tagName: string): Promise<boolean> {
     try {
       const response = await fetch(
-        `${this.baseUrl}/api/tags/search?q=${encodeURIComponent(tagName)}`,
+        `${this.baseUrl}/api/tags/search/${encodeURIComponent(tagName)}`,
         {
           method: 'GET',
           headers: {
@@ -106,7 +137,7 @@ class BackendApiService {
       }
 
       const result = await response.json();
-      return result.found === true;
+      return result.name != null;
     } catch (error) {
       console.warn('Backend tag check failed:', error);
       return false;

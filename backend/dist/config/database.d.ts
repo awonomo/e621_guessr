@@ -14,6 +14,7 @@ export interface DatabaseConfig {
     };
     scoring: {
         maxPoints: number;
+        minPoints: number;
         sweetSpot: Record<number, {
             mu: number;
             sigma: number;

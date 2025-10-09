@@ -1,5 +1,6 @@
 import db from '../database/connection.js';
 import { config } from '../config/database.js';
+import { getTagMultiplier, getProgressiveScalingConfig, getContextualMultiplier } from '../config/multipliers.js';
 
 export interface TagScore {
   guess: string;
@@ -18,6 +19,55 @@ export interface E621Tag {
 
 export class ScoringService {
   
+  /**
+   * Debug method to get detailed scoring breakdown for visualization
+   */
+  getDetailedScoring(postCount: number, category: number): {
+    rarityScore: number;
+    baseScore: number;
+    finalScore: number;
+    parameters: {
+      mu: number;
+      sigma: number;
+      categoryWeight: number;
+      minPoints: number;
+      maxPoints: number;
+    };
+  } {
+    const sweetSpot = config.scoring.sweetSpot[category];
+    const mu = sweetSpot?.mu || 2.5;
+    const sigma = sweetSpot?.sigma || 1.0;
+    const categoryWeight = config.scoring.categoryWeights[category] || 1.0;
+    const minPoints = config.scoring.minPoints || 100;
+    const maxPoints = config.scoring.maxPoints;
+
+    // Current single-stage algorithm
+    const rarityScore = this.rarityCurve(postCount, category);
+    const baseScore = minPoints + (maxPoints - minPoints) * rarityScore;
+    
+    // Create a mock tag to get the final score with all multipliers
+    const mockTag = {
+      name: `debug_tag`,
+      category: category,
+      post_count: postCount,
+      quality: 1.0
+    };
+    const finalScore = this.calculateTagScore(mockTag);
+
+    return {
+      rarityScore,
+      baseScore,
+      finalScore,
+      parameters: {
+        mu,
+        sigma,
+        categoryWeight,
+        minPoints,
+        maxPoints
+      }
+    };
+  }
+
   /**
    * Score a single tag guess - the main scoring method
    */
@@ -54,53 +104,114 @@ export class ScoringService {
   }
   
   /**
-   * 3-Layer scoring system with improved distribution (100-10000 points)
+   * Calculate tag score using simplified single-stage algorithm (100-10000 points)
    */
   private calculateTagScore(tag: E621Tag): number {
-    // Layer 2: Heuristic scoring with better distribution
+    // Single-stage rarity calculation
     const rarityScore = this.rarityCurve(tag.post_count, tag.category);
     const categoryWeight = config.scoring.categoryWeights[tag.category] || 1.0;
     const quality = tag.quality || 1.0; // Default quality
-    
-    // Check for manual multiplier override (NEW FEATURE)
-    const manualMultipliers = config.scoring.manualMultipliers || {};
-    const manualMultiplier = manualMultipliers[tag.name] || 1.0;
 
-    // New scoring formula for better distribution:
-    // - Use logarithmic interpolation between min and max points
-    // - Apply category weight, quality, and manual multiplier
-    // - Ensure minimum score for very common tags
+    // Get manual multiplier from separate config
+    const manualMultiplier = getTagMultiplier(tag.name);
+    
+    // Get contextual multiplier (pattern-based and manual contexts)
+    const contextualMultiplier = getContextualMultiplier(tag.name, tag.category);
     
     const minPoints = config.scoring.minPoints || 100;
     const maxPoints = config.scoring.maxPoints;
     
-    // Convert rarity score (0-1) to logarithmic scale for better distribution
-    // This makes lower scores more interesting and spreads them out more
-    const logRarityScore = rarityScore === 0 ? 0 : Math.log10(rarityScore * 9 + 1) / Math.log10(10);
+    // Calculate base score before manual adjustments
+    const baseScore = minPoints + (maxPoints - minPoints) * rarityScore;
     
-    // Calculate base score using logarithmic interpolation
-    const baseScore = minPoints + (maxPoints - minPoints) * Math.pow(logRarityScore, 0.7);
+    // Apply category weight and quality first
+    const weightedScore = baseScore * categoryWeight * quality;
     
-    // Apply all multipliers: category weight, quality, and manual multiplier
-    const finalScore = Math.round(baseScore * categoryWeight * quality * manualMultiplier);
+    // Apply manual multiplier with configurable progressive scaling
+    // Higher base scores get more reduction/less boost
+    // Lower base scores get less reduction/more boost
+    let scoreAfterManual;
+    if (manualMultiplier !== 1.0) {
+      const scalingConfig = getProgressiveScalingConfig();
+      
+      if (scalingConfig.enabled) {
+        // Normalize score to 0-1 range for progressive calculation
+        const normalizedScore = (weightedScore - minPoints) / (maxPoints - minPoints);
+        
+        // Calculate progressive multiplier effect using config
+        const effectRange = scalingConfig.maxEffect - scalingConfig.minEffect;
+        const progressiveFactor = scalingConfig.minEffect + (normalizedScore * effectRange);
+        
+        if (manualMultiplier > 1.0) {
+          // For boosts: low scores get bigger boost, high scores get smaller boost
+          const boost = (manualMultiplier - 1.0) * (1.0 - progressiveFactor);
+          scoreAfterManual = weightedScore * (1.0 + boost);
+        } else {
+          // For reductions: high scores get bigger reduction, low scores get smaller reduction
+          const reduction = (1.0 - manualMultiplier) * progressiveFactor;
+          scoreAfterManual = weightedScore * (1.0 - reduction);
+        }
+      } else {
+        // Linear scaling when progressive scaling is disabled
+        scoreAfterManual = weightedScore * manualMultiplier;
+      }
+    } else {
+      scoreAfterManual = weightedScore;
+    }
+    
+    // Apply contextual multiplier with the same progressive scaling
+    let finalScore;
+    if (contextualMultiplier !== 1.0) {
+      const scalingConfig = getProgressiveScalingConfig();
+      
+      if (scalingConfig.enabled) {
+        // Normalize score to 0-1 range for progressive calculation
+        const normalizedScore = (scoreAfterManual - minPoints) / (maxPoints - minPoints);
+        
+        // Calculate progressive multiplier effect using config
+        const effectRange = scalingConfig.maxEffect - scalingConfig.minEffect;
+        const progressiveFactor = scalingConfig.minEffect + (normalizedScore * effectRange);
+        
+        if (contextualMultiplier > 1.0) {
+          // For boosts: low scores get bigger boost, high scores get smaller boost
+          const boost = (contextualMultiplier - 1.0) * (1.0 - progressiveFactor);
+          finalScore = Math.round(scoreAfterManual * (1.0 + boost));
+        } else {
+          // For reductions: high scores get bigger reduction, low scores get smaller reduction
+          const reduction = (1.0 - contextualMultiplier) * progressiveFactor;
+          finalScore = Math.round(scoreAfterManual * (1.0 - reduction));
+        }
+      } else {
+        // Linear scaling when progressive scaling is disabled
+        finalScore = Math.round(scoreAfterManual * contextualMultiplier);
+      }
+    } else {
+      finalScore = Math.round(scoreAfterManual);
+    }
     
     // Ensure minimum score
     return Math.max(minPoints, finalScore);
   }
   
   /**
-   * Rarity curve calculation - bell-shaped curve over log(post_count)
+   * Rarity curve calculation - single-stage bell curve with power scaling
+   * Combines Gaussian distribution with built-in score spreading
    */
   private rarityCurve(postCount: number, category: number): number {
     const sweetSpot = config.scoring.sweetSpot[category];
     const mu = sweetSpot?.mu || 2.5;
     const sigma = sweetSpot?.sigma || 1.0;
     
-    // Log-normal curve
+    // Single-stage approach: Modified bell curve with better natural distribution
     const x = Math.log10(Math.max(postCount, 1));
-    const rarity = Math.exp(-Math.pow(x - mu, 2) / (2 * Math.pow(sigma, 2)));
     
-    return rarity;
+    // Gaussian with power scaling for smoother distribution
+    const rawRarity = Math.exp(-Math.pow(x - mu, 2) / (2 * Math.pow(sigma, 2)));
+    
+    // Apply gentle power scaling for better score distribution
+    const scaledRarity = Math.pow(rawRarity, 0.4);
+    
+    return scaledRarity;
   }
   
   /**

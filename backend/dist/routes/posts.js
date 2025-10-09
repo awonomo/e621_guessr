@@ -95,7 +95,7 @@ router.get('/', async (req, res, next) => {
         const apiUrl = `${E621_BASE_URL}/posts.json?limit=${query.limit}&page=${query.page}&tags=${encodeURIComponent(e621Query)}`;
         const response = await fetch(apiUrl, {
             headers: {
-                'User-Agent': USER_AGENT,
+                'User-Agent': 'awonomo/e621guessr by awonomo',
                 'Accept': 'application/json'
             }
         });

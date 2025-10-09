@@ -92,6 +92,15 @@ npm run cli db reset   # Reset database (dev only)
 npm run tags:refresh   # Download latest tag data
 npm run cli tags search "tag_name"  # Search for specific tag
 
+# Daily challenge management
+# Clear specific date's daily challenge (replace date as needed)
+psql -d tag_challenge -c "DELETE FROM daily_results WHERE date = '2025-10-08'; DELETE FROM daily_challenges WHERE date = '2025-10-08';"
+# OR
+curl -X DELETE http://localhost:3001/api/daily/2025-10-08
+
+# Generate new daily challenge for today
+curl http://localhost:3001/api/daily/$(date +%Y-%m-%d)
+
 # Quick test (easiest)
 npm run cli -- tags search "wolf"
 npm run cli -- tags search "scientist"

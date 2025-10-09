@@ -165,4 +165,63 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
+// Testing commands  
+const testCommand = program
+  .command('test')
+  .description('Testing and debugging commands');
+
+testCommand
+  .command('contextual-multiplier <tagName>')
+  .description('Test contextual multiplier pattern matching for a tag')
+  .option('-c, --category <number>', 'tag category (0-8)', parseInt)
+  .action(async (tagName: string, options: { category?: number }) => {
+    try {
+      const { getContextualMultiplier, getTagMultiplierBreakdown } = await import('./config/multipliers.js');
+      
+      let category = options.category;
+      
+      // If no category specified, look it up from the database
+      if (category === undefined) {
+        try {
+          const result = await db.query('SELECT category FROM tags WHERE name = $1', [tagName]);
+          if (result.rows.length > 0) {
+            category = result.rows[0].category;
+            console.log(`\n🏷️  Testing contextual multipliers for: "${tagName}"`);
+            console.log(`   Database Category: ${category}`);
+          } else {
+            console.log(`\n🏷️  Testing contextual multipliers for: "${tagName}"`);
+            console.log(`   ⚠️  Tag not found in database, testing without category restriction`);
+          }
+        } catch (dbError) {
+          console.log(`\n🏷️  Testing contextual multipliers for: "${tagName}"`);
+          console.log(`   ⚠️  Database error, testing without category restriction`);
+        }
+      } else {
+        console.log(`\n🏷️  Testing contextual multipliers for: "${tagName}"`);
+        console.log(`   Manual Category: ${category}`);
+      }
+      
+      const multiplier = getContextualMultiplier(tagName, category);
+      const breakdown = getTagMultiplierBreakdown(tagName, category);
+      
+      console.log(`\n📊 Results:`);
+      console.log(`   Contextual Multiplier: ${multiplier}`);
+      console.log(`   Final Multiplier: ${breakdown.finalMultiplier}`);
+      console.log(`   Source: ${breakdown.source}`);
+      
+      if (breakdown.contextualEffects && breakdown.contextualEffects.length > 0) {
+        console.log(`\n🎯 Matched Contexts:`);
+        breakdown.contextualEffects.forEach(effect => {
+          console.log(`   - ${effect.context}/${effect.subcontext}: ${effect.effect > 0 ? '+' : ''}${effect.effect}`);
+        });
+        console.log(`\n💡 Calculation: ${breakdown.calculation}`);
+      }
+      
+      process.exit(0);
+    } catch (error) {
+      console.error('Error testing contextual multiplier:', error);
+      process.exit(1);
+    }
+  });
+
 program.parse();

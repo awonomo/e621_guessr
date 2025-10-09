@@ -214,12 +214,12 @@ export const gameActions = {
     const normalizedGuess = guess.toLowerCase().trim();
     console.log('[GameStore] Normalized guess:', normalizedGuess);
     
-    // Rate limiting check
+    // Rate limiting check - more lenient: 6 incorrect guesses in 15 seconds
     const now = Date.now();
-    const tenSecondsAgo = now - 10000;
-    const recentIncorrectGuesses = round.incorrectGuessTimestamps.filter(timestamp => timestamp > tenSecondsAgo);
+    const fifteenSecondsAgo = now - 15000;
+    const recentIncorrectGuesses = round.incorrectGuessTimestamps.filter(timestamp => timestamp > fifteenSecondsAgo);
     
-    if (recentIncorrectGuesses.length >= 5) {
+    if (recentIncorrectGuesses.length >= 6) {
       console.warn('[GameStore] Rate limited - too many incorrect guesses');
       return { 
         guess, 
@@ -246,41 +246,53 @@ export const gameActions = {
     }
 
     if (!matchedTag) {
-      // Step 2: No direct match - check if guess is an alias that resolves to a post tag
-      console.log('[GameStore] Step 2: No direct match, checking backend for alias');
+      // Step 2: No direct match - check if guess resolves to a tag on this post via alias
+      console.log('[GameStore] Step 2: No direct match, checking alias resolution');
+      
       try {
-        const backendResult = await backendApi.scoreTag(normalizedGuess);
-        console.log('[GameStore] Backend result:', backendResult);
+        // Resolve the guess to its canonical tag name (if it's an alias)
+        const resolvedTag = await backendApi.resolveTag(normalizedGuess);
+        console.log('[GameStore] Alias resolution result:', resolvedTag);
         
-        if (backendResult && backendResult.isCorrect && backendResult.actualTag) {
-          console.log('[GameStore] Backend found tag:', backendResult.actualTag);
+        if (resolvedTag) {
+          console.log('[GameStore] Guess resolves to tag:', resolvedTag);
           
-          // Check if the resolved tag is on this post
+          // Now check if this resolved tag is on the current post
           for (const [cat, tags] of Object.entries(round.post.tags)) {
             const tagCategory = cat as TagCategory;
             
-            if (tags.some(tag => tag.toLowerCase() === backendResult.actualTag!.toLowerCase())) {
-              matchedTag = backendResult.actualTag;
+            if (tags.some(tag => tag.toLowerCase() === resolvedTag.toLowerCase())) {
+              matchedTag = resolvedTag;
               matchedCategory = tagCategory;
               
-              console.log('[GameStore] Alias resolved to post tag:', matchedTag, 'with 10% deduction');
+              console.log('[GameStore] Resolved tag found on post:', matchedTag, 'scoring with backend...');
               
-              // Mark this as an alias match with slight point deduction
-              const aliasResult = await this.processCorrectGuess(
-                guess, 
-                matchedTag, 
-                matchedCategory, 
-                backendResult.score * 0.9, // 10% deduction for alias
-                true // wasFromAlias
-              );
-              
-              return aliasResult;
+              // Now score the confirmed tag
+              const backendResult = await backendApi.scoreTag(resolvedTag);
+              if (backendResult && backendResult.isCorrect) {
+                console.log('[GameStore] Backend scored resolved tag:', backendResult);
+                
+                // Mark this as an alias match with slight point deduction
+                const aliasResult = await this.processCorrectGuess(
+                  guess, 
+                  matchedTag, 
+                  matchedCategory, 
+                  backendResult.score * 0.9, // 10% deduction for alias
+                  true // wasFromAlias
+                );
+                
+                return aliasResult;
+              } else {
+                console.warn('[GameStore] Backend failed to score resolved tag:', resolvedTag);
+              }
             }
           }
-          console.log('[GameStore] Backend tag not found on current post');
+          console.log('[GameStore] Resolved tag', resolvedTag, 'not found on current post');
+        } else {
+          console.log('[GameStore] Guess does not resolve to any valid tag');
         }
       } catch (error) {
-        console.warn('[GameStore] Backend alias check failed:', error);
+        console.warn('[GameStore] Alias resolution failed:', error);
       }
       
       // Step 3: No match found - record as incorrect
@@ -636,45 +648,77 @@ export const gameActions = {
     }));
   },
 
-  startDailyChallenge() {
-    appState.update(state => {
-      if (!state.dailyChallenge) return state;
-      
-      const gameSettings: GameSettings = {
-        ...state.dailyChallenge.settings,
-        mode: 'daily'
-      };
-      
-      // Start game with daily challenge posts
-      const sessionId = crypto.randomUUID();
+  async startDailyChallenge() {
+    try {
+      // Get today's date in Central Standard Time (CST)
       const now = new Date();
+      const cstOffset = -6; // CST is UTC-6
+      const cstTime = new Date(now.getTime() + (cstOffset * 60 * 60 * 1000));
+      const today = cstTime.toISOString().split('T')[0]; // YYYY-MM-DD format
+      console.log('[GameStore] Loading daily challenge for:', today, '(CST)');
       
-      const rounds: RoundData[] = state.dailyChallenge.posts.slice(0, gameSettings.totalRounds).map(post => ({
-        post,
-        timeLimit: gameSettings.timeLimit,
-        timeRemaining: gameSettings.timeLimit,
-        correctGuesses: {},
-        totalGuesses: 0,
-        incorrectGuesses: 0,
-        incorrectGuessTimestamps: [],
-        score: 0,
-        startedAt: now
-      }));
-
-      return {
-        ...state,
-        currentSession: {
-          id: `daily-${sessionId}`,
-          settings: gameSettings,
-          rounds,
-          currentRound: 0,
-          totalScore: 0,
-          startedAt: now,
-          isActive: true
-        },
-        currentState: 'countdown'
+      // Get player name (for now, use a default or from localStorage)
+      const playerName = localStorage.getItem('playerName') || 'Player';
+      
+      // Check if player has already completed today's challenge
+      const statusResponse = await fetch(`/api/daily/${today}/status?player_name=${encodeURIComponent(playerName)}`);
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json();
+        if (statusData.completed) {
+          console.log('[GameStore] Player has already completed daily challenge:', statusData.result);
+          // TODO: Show completed daily challenge results or navigate to summary
+          alert(`You already completed today's daily challenge!\nScore: ${statusData.result.score}\nCompleted: ${new Date(statusData.result.completed_at).toLocaleString()}`);
+          return;
+        }
+      }
+      
+      // Load the daily challenge posts
+      const response = await fetch(`/api/daily/${today}`);
+      console.log('[GameStore] Daily challenge response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[GameStore] Daily challenge error:', response.status, errorText);
+        alert(`Failed to load daily challenge: HTTP ${response.status}`);
+        return;
+      }
+      
+      const data = await response.json();
+      console.log('[GameStore] Daily challenge data:', data);
+      
+      // Create game settings from daily challenge config
+      const gameSettings: GameSettings = {
+        mode: 'daily',
+        totalRounds: data.config.ROUNDS,
+        timeLimit: data.config.TIME_LIMIT,
+        ratings: ['safe', 'questionable', 'explicit'],
+        minUpvotes: data.config.MIN_POST_SCORE || 10,
+        customCriteria: ''
       };
-    });
+      
+      // Store the daily challenge info in state
+      appState.update(state => ({
+        ...state,
+        dailyChallenge: {
+          date: data.date,
+          posts: data.posts,
+          settings: {
+            totalRounds: gameSettings.totalRounds,
+            timeLimit: gameSettings.timeLimit,
+            ratings: gameSettings.ratings,
+            minUpvotes: gameSettings.minUpvotes,
+            customCriteria: gameSettings.customCriteria
+          }
+        }
+      }));
+      
+      // Start the game using the existing startGame method
+      this.startGame(gameSettings, data.posts);
+      
+    } catch (error) {
+      console.error('[GameStore] Failed to load daily challenge:', error);
+      alert(`Network error loading daily challenge: ${error.message}`);
+    }
   },
 
   restartWithSameSettings() {
@@ -719,6 +763,10 @@ export const gameActions = {
       return;
     }
     
+    console.log('[GameStore] Full post structure:', currentRound.post);
+    console.log('[GameStore] Post sample:', currentRound.post.sample);
+    console.log('[GameStore] Post file:', currentRound.post.file);
+    
     const imageUrl = currentRound.post.sample?.url || currentRound.post.file?.url;
     console.log('[GameStore] Preloading current round image:', imageUrl);
     
@@ -745,7 +793,9 @@ export const gameActions = {
     const nextRound = state.currentSession.rounds[nextRoundIndex];
     
     if (nextRound) {
-      const imageUrl = nextRound.post.sample?.url || nextRound.post.file?.url;
+      const imageUrl = nextRound.post.sample?.url || 
+                       nextRound.post.file?.url || 
+                       (nextRound.post as any).file_url;
       console.log('[GameStore] Preloading next round image:', imageUrl);
       
       if (imageUrl) {
