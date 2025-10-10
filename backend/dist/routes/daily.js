@@ -1,25 +1,31 @@
 import { Router } from 'express';
 import db from '../database/connection.js';
 const router = Router();
-// Blacklisted tags for daily challenges
+// BLACKLISTED tags
 const DAILY_BLACKLIST = [
     'young',
+    'young_(lore)',
     'cub',
-    'underage',
     'gore',
     'death',
     'suicide',
     'blood',
     'bad_parenting',
+    'babysitter',
     'incest_(lore)',
     'self-harm',
     'abuse',
+    'kidnapping',
+    'slave',
     'rape',
     'forced',
     'bestiality',
     'extreme_penetraton',
     'bestiality',
+    'anthro_on_feral',
+    'realistic_feral',
     'human_on_feral',
+    'human_on_anthro',
     'birth',
     'scat',
     'diaper',
@@ -32,14 +38,29 @@ const DAILY_BLACKLIST = [
     'entrails',
     'nightmare_fuel',
     'scatplay',
-    'upset_stomach',
-    'morbidly_obsese',
-    'castration',
 ];
+// Helper function to build E621 query for daily challenges
+function buildDailyE621Query(minPostScore) {
+    const tags = [];
+    // Always start with order:random for games
+    tags.push('order:random');
+    // Minimum score for post quality
+    if (minPostScore > 0) {
+        tags.push(`score:>=${minPostScore}`);
+    }
+    // Minimum tag count for game quality (50+ tags)
+    tags.push('tagcount:>=50');
+    // filetype restrictions
+    tags.push('-type:mp4');
+    tags.push('-type:webm');
+    tags.push('-type:swf');
+    return tags.join(' ');
+}
 const DAILY_CONFIG = {
     ROUNDS: 5,
     TIME_LIMIT: 120, // 2 minutes in seconds
-    MIN_SCORE_THRESHOLD: 250
+    MIN_SCORE_THRESHOLD: 250, // Daily challenge passing score
+    MIN_POST_SCORE: 200 // Minimum e621 post score for quality
 };
 /**
  * Get or generate daily challenge for a specific date
@@ -96,11 +117,16 @@ router.get('/:date/status', async (req, res) => {
         if (existingSubmission) {
             // Get the player's result
             const result = await db.query('SELECT score, rounds, completed_at FROM daily_results WHERE date = $1 AND player_name = $2', [date, player_name]);
+            // Handle rounds data - it might already be parsed or need parsing
+            let rounds = result.rows[0].rounds;
+            if (typeof rounds === 'string') {
+                rounds = JSON.parse(rounds);
+            }
             return res.json({
                 completed: true,
                 result: {
                     score: result.rows[0].score,
-                    rounds: JSON.parse(result.rows[0].rounds),
+                    rounds: rounds,
                     completed_at: result.rows[0].completed_at
                 }
             });
@@ -213,11 +239,15 @@ async function generateDailyChallenge() {
     const validPosts = [];
     const maxAttempts = 50; // Prevent infinite loops
     let attempts = 0;
+    // Build query with minimum score and other filters
+    const queryTags = buildDailyE621Query(DAILY_CONFIG.MIN_POST_SCORE);
+    console.log('🔍 Daily challenge query:', queryTags);
     while (validPosts.length < DAILY_CONFIG.ROUNDS && attempts < maxAttempts) {
         attempts++;
         try {
-            // Fetch random post from e621 API
-            const response = await fetch('https://e621.net/posts.json?tags=order:random%20tagcount:>=50&limit=1', {
+            // Fetch random post from e621 API using proper query
+            const apiUrl = `https://e621.net/posts.json?tags=${encodeURIComponent(queryTags)}&limit=1`;
+            const response = await fetch(apiUrl, {
                 headers: {
                     'User-Agent': 'e621TagChallenge/1.0 (https://github.com/user/repo)'
                 }

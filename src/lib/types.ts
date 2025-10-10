@@ -1,14 +1,14 @@
 // Core game types and interfaces
 
-export type GameState = 
+export type GameState =
   | 'home'
-  | 'setup' 
+  | 'setup'
   | 'countdown'
   | 'playing'
   | 'roundSummary'
   | 'gameSummary';
 
-export type GameMode = 
+export type GameMode =
   | 'classic'
   | 'daily'
   | 'timeAttack'
@@ -16,7 +16,7 @@ export type GameMode =
 
 export type Rating = 'safe' | 'questionable' | 'explicit';
 
-export type TagCategory = 
+export type TagCategory =
   | 'general'
   | 'artist'
   | 'copyright'
@@ -73,6 +73,7 @@ export interface RoundData {
   score: number;
   startedAt: Date;
   endedAt?: Date;
+  pauseCount: number; // Track how many times player has paused this round
 }
 
 export interface GameSession {
@@ -105,6 +106,7 @@ export interface GuessResult {
   category?: TagCategory;
   wasFromAlias?: boolean; // True if guess was matched via alias
   rateLimited?: boolean; // True if guess was blocked due to rate limiting
+  blockedByCustomCriteria?: boolean; // True if guess was blocked by custom criteria
 }
 
 export interface TagScoreEntry {

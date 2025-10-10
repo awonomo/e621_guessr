@@ -49,6 +49,10 @@ export declare class ScoringService {
      * Only called when tag is not found in local database
      */
     private getTagFromAPI;
+    /**
+     * Get the minimum points for a specific category
+     */
+    private getMinPointsForCategory;
 }
 declare const _default: ScoringService;
 export default _default;

@@ -12,7 +12,7 @@ export interface DatabaseConfig {
   };
   scoring: {
     maxPoints: number;
-    minPoints: number;
+    minPoints: number | Record<number, number>; // Can be single value or category-specific
     sweetSpot: Record<number, { mu: number; sigma: number }>;
     categoryWeights: Record<number, number>;
   };
@@ -39,28 +39,38 @@ export const config: DatabaseConfig = {
   },
   scoring: {
     maxPoints: 10000,
-    minPoints: 100,
+    minPoints: {
+      0: 100,  // General
+      1: 800,  // Artist
+      2: 2000,  // Contributor
+      3: 1000,  // Copyright
+      4: 1500,  // Character
+      5: 800,  // Species
+      6: 1000,   // Invalid
+      7: 925,   // Meta
+      8: 725    // Lore
+    },
     sweetSpot: {
-      0: { mu: 2.5, sigma: 0.8 }, // General
-      1: { mu: 1.8, sigma: 0.7 }, // Artist
-      2: { mu: 1.8, sigma: 0.6 }, // Contributor
-      3: { mu: 2.2, sigma: 0.7 }, // Copyright
-      4: { mu: 1.7, sigma: 0.8 }, // Character
-      5: { mu: 2.3, sigma: 0.7 }, // Species
+      0: { mu: 2.5, sigma: 0.621 }, // General
+      1: { mu: 1.8, sigma: 1 }, // Artist
+      2: { mu: 2.2, sigma: 0.6 }, // Contributor
+      3: { mu: 1.9, sigma: 0.9 }, // Copyright
+      4: { mu: 2, sigma: 1.3 }, // Character
+      5: { mu: 2.3, sigma: 0.4 }, // Species
       6: { mu: 1.0, sigma: 0.5 }, // Invalid
-      7: { mu: 3.5, sigma: 0.6 }, // Meta
-      8: { mu: 3.8, sigma: 0.4 }  // Lore
+      7: { mu: 3.2, sigma: 0.5 }, // Meta
+      8: { mu: 3.8, sigma: 0.8 }  // Lore
     },
     categoryWeights: {
-      0: 1, // General
-      1: 0.2, // Artist
-      2: 1, // Contributor
-      3: 1, // Copyright
-      4: 1.5, // Character
+      0: 1.15, // General
+      1: 0.4, // Artist
+      2: 1.2, // Contributor
+      3: 1.2, // Copyright
+      4: 1, // Character
       5: 1.3, // Species
-      6: 1, // Invalid
-      7: 1, // Meta
-      8: 1.3  // Lore
+      6: 0.5, // Invalid
+      7: 0.6, // Meta
+      8: 0.4  // Lore
     }
   },
   tagRefresh: {

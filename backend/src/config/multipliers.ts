@@ -100,7 +100,13 @@ export const contexts: Contexts = {
   'looking_at_viewer': 0.6,
   'simple_background': 0.5,
   'white_background': 0.5,
-  
+
+  // overpowered tags
+  'cum_on_own_breasts': 0.5,
+  'cum_in_own_mouth': 0.7,
+  'cum_on_own_face': 0.7,
+
+  'leg_fur': 0.5,
   // Art style tags that are common but not very interesting to guess
   'digital_media_(artwork)': 0.7,
   'shaded': 0.8,

@@ -38,7 +38,7 @@ export class ScoringService {
     const mu = sweetSpot?.mu || 2.5;
     const sigma = sweetSpot?.sigma || 1.0;
     const categoryWeight = config.scoring.categoryWeights[category] || 1.0;
-    const minPoints = config.scoring.minPoints || 100;
+    const minPoints = this.getMinPointsForCategory(category);
     const maxPoints = config.scoring.maxPoints;
 
     // Current single-stage algorithm
@@ -118,7 +118,7 @@ export class ScoringService {
     // Get contextual multiplier (pattern-based and manual contexts)
     const contextualMultiplier = getContextualMultiplier(tag.name, tag.category);
     
-    const minPoints = config.scoring.minPoints || 100;
+    const minPoints = this.getMinPointsForCategory(tag.category);
     const maxPoints = config.scoring.maxPoints;
     
     // Calculate base score before manual adjustments
@@ -306,6 +306,21 @@ export class ScoringService {
       console.warn(`Layer 3 API fallback failed for "${tagName}":`, error);
       return null;
     }
+  }
+
+  /**
+   * Get the minimum points for a specific category
+   */
+  private getMinPointsForCategory(category: number): number {
+    const minPointsConfig = config.scoring.minPoints;
+    
+    // If minPoints is a number (backwards compatibility), use it for all categories
+    if (typeof minPointsConfig === 'number') {
+      return minPointsConfig;
+    }
+    
+    // Otherwise, get category-specific minPoints or default to 100
+    return minPointsConfig[category] || 100;
   }
 }
 

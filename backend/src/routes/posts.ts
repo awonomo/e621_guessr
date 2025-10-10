@@ -65,14 +65,30 @@ function buildE621Query(params: PostsQuery): string {
   tags.push('tagcount:>=50');
 
   // Base restrictions for game content
-  tags.push('-animated');
-  tags.push('-young');
+  tags.push('-type:mp4');
+  tags.push('-type:webm');
+  tags.push('-type:swf');
+  tags.push('-young -young_(lore)');
 
   // Custom criteria (allow user to add specific requirements)
   if (params.customCriteria?.trim()) {
     // Split custom criteria by spaces and add each as separate tag
     const customTags = params.customCriteria.trim().split(/\s+/);
-    tags.push(...customTags);
+    
+    // Filter out post ID patterns (id:number or just numbers) and system parameters
+    const filteredTags = customTags.filter(tag => {
+      // Block patterns like "id:123", "id:123456", or standalone numbers
+      if (/^id:\d+$/.test(tag) || /^\d+$/.test(tag)) {
+        return false;
+      }
+      // Block system parameters that could break the game
+      if (/^limit:/i.test(tag) || /^tagcount:/i.test(tag)) {
+        return false;
+      }
+      return true;
+    });
+    
+    tags.push(...filteredTags);
   }
 
   // User provided tags
@@ -135,7 +151,7 @@ router.get('/', async (req, res, next) => {
     });
 
     if (filteredPosts.length === 0) {
-      throw createError('No suitable posts found for these criteria. Try different settings.', 404);
+      throw createError('Not enough posts found for these tags.', 404);
     }
 
     console.log(`✅ Found ${filteredPosts.length} posts`);

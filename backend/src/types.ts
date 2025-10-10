@@ -1,7 +1,7 @@
 // Shared types between frontend and backend
 export type Rating = 'safe' | 'questionable' | 'explicit';
 
-export type TagCategory = 
+export type TagCategory =
   | 'general'
   | 'artist'
   | 'copyright'

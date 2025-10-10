@@ -23,14 +23,8 @@
   let previousGuesses = new Set<string>();
   let newlyAddedTags = new Set<string>();
   
-  // Simple reactive statement to debug prop changes
-  $: console.log('[TagList] Simple reactive - correctGuesses changed:', correctGuesses);
-  
   // Convert correctGuesses to sorted array - sort by most recent guess (order)
   $: if (correctGuesses) {
-    console.log('[TagList] Reactive statement triggered');
-    console.log('[TagList] correctGuesses:', correctGuesses);
-    
     const currentGuesses = new Set<string>();
     
     // First, collect all current guesses to check if anything actually changed
@@ -45,11 +39,8 @@
     
     // Only update if there are actual new guesses
     const hasNewGuesses = Array.from(currentGuesses).some(guess => !previousGuesses.has(guess));
-    console.log('[TagList] hasNewGuesses:', hasNewGuesses);
     
     if (hasNewGuesses || tagEntries.length === 0) {
-      console.log('[TagList] Updating tag entries...');
-      
       // Clear newly added tags from previous update
       newlyAddedTags.clear();
       
@@ -82,7 +73,6 @@
       // Sort by most recent guess (order descending) - newest first
       newEntries.sort((a, b) => b.order - a.order);
       
-      console.log('[TagList] Final newEntries (sorted by recency):', newEntries);
       tagEntries = newEntries;
       previousGuesses = currentGuesses;
       
@@ -91,8 +81,6 @@
         newlyAddedTags.clear();
         newlyAddedTags = new Set(newlyAddedTags); // Trigger reactivity
       }, 500);
-    } else {
-      console.log('[TagList] No update needed - no new guesses');
     }
   }
   
@@ -146,12 +134,11 @@
       </div>
     {/each}
     
-    {#if tagEntries.length === 0}
+    <!-- {#if tagEntries.length === 0}
       <div class="empty-state">
-        <p>No tags found yet...</p>
         <small>Start guessing!</small>
       </div>
-    {/if}
+    {/if} -->
   </div>
   
   {#if canScroll}
@@ -173,36 +160,24 @@
     flex-direction: column;
     overflow: hidden; /* Ensure container doesn't expand */
   }
-  
+
   .tag-list {
     flex: 1;
     overflow-y: auto;
-    overflow-x: hidden; /* Prevent horizontal overflow */
+    overflow-x: hidden;
     padding-right: 0.5rem;
     scroll-behavior: smooth;
   }
   
-  .tag-list::-webkit-scrollbar {
-    width: 4px;
+  .scrollable {
+    scrollbar-width: none;
   }
   
-  .tag-list::-webkit-scrollbar-track {
-    background: var(--bg-primary);
-    border-radius: 2px;
+  .scrollable::-webkit-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    display: none;
   }
-  
-  .tag-list::-webkit-scrollbar-thumb {
-    background: var(--text-secondary);
-    border-radius: 2px;
-  }
-  
-  .tag-list::-webkit-scrollbar-thumb:hover {
-    background: var(--text-accent);
-  }
-  
-  /* Component-specific tag overrides */
-  /* No longer needed - styles are in app.css */
-  
+
   .empty-state {
     display: flex;
     flex-direction: column;
@@ -240,6 +215,7 @@
     color: var(--text-secondary);
     font-size: 1.25rem;
     animation: bounce 2s infinite;
+    display: none;
   }
   
   .fade-edge {
@@ -252,6 +228,20 @@
     pointer-events: none;
     opacity: 0.5;
   }
+
+    @media (max-width: 768px) {
+      .fade-edge{
+        display: none;
+      }
+
+      .tag-list-container::-webkit-scrollbar {
+        display: none;
+      }
+      .tag-list {
+        /* background-color: var(--bg-secondary); */
+      }
+
+    }
   
   @keyframes bounce {
     0%, 20%, 50%, 80%, 100% {

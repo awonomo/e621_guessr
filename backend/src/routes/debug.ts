@@ -953,13 +953,20 @@ router.get('/visualization', (req, res) => {
                 legend: {
                     orientation: "h",
                     yanchor: "top",
-                    y: -0.15,
+                    y: -0.25,
                     xanchor: "center",
                     x: 0.5
-                }
+                },
+                margin: {
+                    l: 50,
+                    r: 50,
+                    t: 60,
+                    b: 120
+                },
+                autosize: true
             };
 
-            Plotly.newPlot('scorePlot', traces, layout);
+            Plotly.newPlot('scorePlot', traces, layout, {responsive: true});
         }
 
         function showDataTable(data) {

@@ -15,6 +15,7 @@
   let inputElement: HTMLInputElement;
   let isSubmitting = $state(false);
   let recentGuesses = $state<string[]>([]);
+  let isShaking = $state(false);
   
   // Command history navigation state  
   let commandHistory = $state<string[]>([]);
@@ -62,6 +63,7 @@
     // Check for duplicate recent guesses
     if (recentGuesses.includes(guess)) {
       showFeedback('Already guessed!', 'warning');
+      triggerShake();
       return;
     }
     
@@ -74,12 +76,27 @@
       // Check if the guess was rate-limited
       if (result && result.rateLimited) {
         showFeedback('Too many guesses! Wait a moment...', 'warning');
+        triggerShake();
         // Don't clear input, don't add to history - let player try again
         isSubmitting = false;
         return;
       }
       
-      // Only clear input and add to history for non-rate-limited guesses
+      // Check if the guess was blocked by custom criteria
+      if (result && result.blockedByCustomCriteria) {
+        showFeedback('Cannot guess tags from custom criteria!', 'warning');
+        triggerShake();
+        // Don't clear input, don't add to history - let player try again
+        isSubmitting = false;
+        return;
+      }
+      
+      // Check if the guess was incorrect (assuming result has isCorrect property)
+      if (result && result.isCorrect === false) {
+        triggerShake();
+      }
+      
+      // Only clear input and add to history for valid guesses
       // Add to recent guesses for duplicate checking
       recentGuesses = [guess, ...recentGuesses.slice(0, 4)]; // Keep last 5
       
@@ -151,6 +168,13 @@
     }
   }
   
+  function triggerShake() {
+    isShaking = true;
+    setTimeout(() => {
+      isShaking = false;
+    }, 600); // Duration of shake animation
+  }
+  
   function showFeedback(message: string, type: 'success' | 'warning' | 'error') {
     // Create temporary feedback element
     const feedback = document.createElement('div');
@@ -158,7 +182,7 @@
     feedback.className = `feedback-message ${type}`;
     feedback.style.cssText = `
       position: fixed;
-      bottom: 6rem;
+      bottom: 2rem;
       left: 50%;
       transform: translateX(-50%);
       background: var(--bg-secondary);
@@ -194,7 +218,7 @@
   }
 </script>
 
-<div class="guess-input-container" class:disabled>
+<div class="guess-input-container" class:disabled class:shaking={isShaking}>
   <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="guess-form">
     <div class="input-wrapper">
       <input
@@ -229,24 +253,20 @@
       </button>
     </div>
     
-    {#if recentGuesses.length > 0}
+    <!-- {#if recentGuesses.length > 0}
       <div class="recent-guesses">
         <small>Recent:</small>
         {#each recentGuesses.slice(0, 3) as guess}
           <span class="recent-guess">{guess}</span>
         {/each}
       </div>
-    {/if}
+    {/if} -->
   </form>
 </div>
 
 <style>
   .guess-input-container {
-    position: fixed;
-    bottom: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 2rem);
+    width: 100%;
     max-width: 600px;
     z-index: 100;
   }
@@ -254,6 +274,10 @@
   .guess-input-container.disabled {
     opacity: 0.6;
     pointer-events: none;
+  }
+  
+  .guess-input-container.shaking {
+    animation: shake 0.6s ease-in-out;
   }
   
   .guess-form {
@@ -285,7 +309,7 @@
     flex: 1;
     background: transparent;
     border: none;
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 1rem;
     font-size: 1.25rem;
     color: var(--text-dark);
     outline: none;
@@ -371,6 +395,12 @@
     to {
       transform: rotate(360deg);
     }
+  }
+  
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+    20%, 40%, 60%, 80% { transform: translateX(8px); }
   }
   
   /* Mobile adjustments */

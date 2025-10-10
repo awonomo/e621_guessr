@@ -64,22 +64,28 @@
     </button>
     
     {#if $currentSession?.settings.mode !== 'endless'}
-      <div class="timer-container">
+      <div class="timer-container timer-container-mobile">
         <Timer 
           onTimeUp={handleTimeUp}
           ontogglePause={togglePause}
+          variant="mobile"
         />
       </div>
     {/if}
     
     <button class="icon-button skip-button" onclick={skipRound} title="Skip Round">
-      ⏭️
+      ⏭
     </button>
   </div>
 
   <!-- Main Game Area -->
   <div class="game-grid">
-    <!-- Post Viewer Area (4/5 width) -->
+    <!-- Score Display Area (Mobile Only) -->
+    <div class="score-display-area">
+      <ScoreDisplay score={$currentRound?.score || 0} />
+    </div>
+
+    <!-- Post Viewer Area -->
     <div class="post-area">
       {#if $currentRound?.post}
         <PostViewer 
@@ -93,35 +99,53 @@
       {/if}
     </div>
 
-    <!-- Scoreboard Area (1/5 width) -->
-    <div class="scoreboard-area">
-      <ScoreDisplay score={$currentRound?.score || 0} />
-      
+    <!-- Scoreboard Area -->
+    <div class="tag-list">
       <TagList 
         correctGuesses={$currentRound?.correctGuesses}
       />
+    </div>
       
       <div class="tag-progress">
         <span class="progress-text">{correctTags} / {totalTags} tags</span>
       </div>
-    </div>
-  </div>
+    
 
-  <!-- Guess Input (Fixed at bottom) -->
-  <GuessInput 
-    onsubmit={handleGuessSubmit}
-    disabled={$isPaused || !$isGameActive}
-  />
+     <!-- Guess Input -->
+    <div class="guess-input-area">
+      <GuessInput 
+        onsubmit={handleGuessSubmit}
+        disabled={$isPaused || !$isGameActive}
+      />
+    </div>
+
+    {#if $currentSession?.settings.mode !== 'endless'}
+      <div class="timer-container timer-container-desktop">
+        <Timer 
+          onTimeUp={handleTimeUp}
+          ontogglePause={togglePause}
+          variant="desktop"
+        />
+      </div>
+    {/if}
+
+  </div> <!-- End of game-grid! -->
 </div>
 
 <style>
   .gameplay-screen {
-    height: 100vh; /* Fixed height instead of min-height */
+    height: 100vh;
+    max-height: 100vh;
     background: var(--bg-primary);
     color: var(--text-primary);
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Prevent page from growing */
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
   }
   
   .top-bar {
@@ -131,15 +155,31 @@
     padding: 1rem 2rem;
     position: relative;
     z-index: 100;
+    flex-shrink: 0;
   }
   
   .timer-container {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
     display: flex;
     align-items: center;
     gap: 1rem;
+  }
+  
+  .timer-container-mobile {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+  }
+  
+  .timer-container-desktop {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem 0;
+    margin-bottom: 1rem;
+    order: 2;
   }
   
   .icon-button {
@@ -166,19 +206,38 @@
   .game-grid {
     display: grid;
     grid-template-columns: 4fr 1fr;
-    gap: 2rem;
+    grid-template-rows: 1fr 5fr auto auto;
+    gap: 1rem;
     flex: 1;
-    padding: 0 2rem;
-    min-height: 0; /* Important for flex child */
-    height: 100%; /* Ensure it takes full available height */
-    overflow: hidden; /* Prevent grid from expanding */
+    padding: 0 2rem 0rem 2rem;
+    min-height: 0; 
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  
+  .guess-input-area {
+    grid-row: 4;
+    grid-column: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 0;
+    order: 1;
+  }
+  
+  .score-display-area {
+    grid-row: 1;
+    grid-column: 2; 
   }
   
   .post-area {
+    grid-column: 1;
+    grid-row: 1 / 4;
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 0;
+    overflow: hidden;
     position: relative;
   }
   
@@ -187,26 +246,29 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    height: 60vh;
+    height: 100%;
+    max-height: 60vh;
     background: var(--bg-secondary);
     border-radius: var(--border-radius);
     color: var(--text-secondary);
     font-size: 1.25rem;
   }
   
-  .scoreboard-area {
+  .tag-list {
+    grid-column: 2;
+    grid-row: 2 / 3;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
     padding: 1rem 0;
     min-height: 0;
-    height: 100%;
-    overflow: hidden; /* Prevent scoreboard from expanding */
+    overflow: hidden;
   }
   
   .tag-progress {
-    margin-top: auto;
-    padding: 1rem 0;
+    padding: 1rem;
+    grid-column: 2;
+    grid-row: 3;
     text-align: center;
     border-top: 1px solid var(--bg-secondary);
   }
@@ -216,8 +278,19 @@
     font-weight: 600;
     font-size: 1.25rem;
   }
+
+  .timer-container-desktop {
+    grid-column: 2;
+    grid-row: 4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.25rem 0;
+    background-color: transparent;
+    color: var(--bg-primary);
+  }
   
-  /* Responsive Design */
+  /* breakpoint */
   @media (max-width: 1200px) {
     .game-grid {
       grid-template-columns: 3fr 1fr;
@@ -225,24 +298,61 @@
   }
   
   @media (max-width: 768px) {
-    .game-grid {
-      grid-template-columns: 1fr;
-      grid-template-rows: 1fr auto;
+    .gameplay-screen {
+      position: relative;
     }
     
-    .scoreboard-area {
+    .game-grid {
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: auto 1fr 5fr 0.5fr;
+      padding: 0 1rem 1rem 1rem;
+    }
+
+    .score-display-area {
+      grid-column: 2;
+      grid-row: 1;
+      display: block;
+      padding: 0 0;
+      text-align: center;
+    }
+
+    .post-area {
+      grid-column: 1 / 4;
+      grid-row: 3;
+    }
+
+    .guess-input-area {
+      grid-column: 1 / 4;
+      grid-row: 4;
+      order: 1;
+    }
+
+    .timer-container-mobile {
+      display: flex;
+    }
+    
+    .timer-container-desktop {
+      display: none;
+    }
+    
+    .tag-list {
+      grid-column: 1 / 4;
+      grid-row: 2;
       order: 2;
       flex-direction: row;
-      gap: 1rem;
-      padding: 1rem;
-      background: var(--bg-secondary);
-      border-radius: var(--border-radius);
+      padding: 0;
+      border-radius: 8px;
     }
-    
+
     .tag-progress {
+      grid-column: 3;
+      grid-row: 1;
       margin-top: 0;
-      margin-left: auto;
       border-top: none;
+    }
+
+    .skip-button {
+      color: var(--text-light);
     }
   }
 </style>

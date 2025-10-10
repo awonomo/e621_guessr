@@ -18,8 +18,6 @@ class BackendApiService {
    * Score a tag guess using the backend scoring service
    */
   async scoreTag(guess: string): Promise<BackendTagScore | null> {
-    console.log('[BackendAPI] Scoring tag:', guess);
-    
     try {
       const startTime = Date.now();
       const response = await fetch(
@@ -34,7 +32,6 @@ class BackendApiService {
       );
 
       const duration = Date.now() - startTime;
-      console.log('[BackendAPI] Score request completed in', duration + 'ms');
 
       if (!response.ok) {
         console.warn('[BackendAPI] Scoring failed:', response.status, response.statusText);
@@ -42,7 +39,6 @@ class BackendApiService {
       }
 
       const result: BackendTagScore = await response.json();
-      console.log('[BackendAPI] Score result:', result);
       return result;
     } catch (error) {
       console.error('[BackendAPI] Scoring request failed:', error);
@@ -54,8 +50,6 @@ class BackendApiService {
    * Score multiple tags in bulk (for round breakdown)
    */
   async scoreBulkTags(guesses: string[]): Promise<BackendTagScore[]> {
-    console.log('[BackendAPI] Bulk scoring', guesses.length, 'tags');
-    
     try {
       const startTime = Date.now();
       const response = await fetch(
@@ -70,7 +64,6 @@ class BackendApiService {
       );
 
       const duration = Date.now() - startTime;
-      console.log('[BackendAPI] Bulk request completed in', duration + 'ms');
 
       if (!response.ok) {
         console.warn('[BackendAPI] Bulk scoring failed:', response.status, response.statusText);
@@ -78,7 +71,6 @@ class BackendApiService {
       }
 
       const result = await response.json();
-      console.log('[BackendAPI] Bulk scored', result.successful, 'of', result.total, 'tags');
       return result.results || [];
     } catch (error) {
       console.error('[BackendAPI] Bulk scoring request failed:', error);
@@ -90,8 +82,6 @@ class BackendApiService {
    * Resolve a tag guess to its canonical form (handles aliases)
    */
   async resolveTag(guess: string): Promise<string | null> {
-    console.log('[BackendAPI] Resolving tag:', guess);
-    
     try {
       const response = await fetch(
         `${this.baseUrl}/api/tags/search/${encodeURIComponent(guess)}`,
@@ -104,12 +94,10 @@ class BackendApiService {
       );
 
       if (!response.ok) {
-        console.log('[BackendAPI] Tag not found:', guess);
         return null;
       }
 
       const result = await response.json();
-      console.log('[BackendAPI] Resolved to:', result.name);
       return result.name || null;
     } catch (error) {
       console.warn('[BackendAPI] Tag resolution failed:', error);

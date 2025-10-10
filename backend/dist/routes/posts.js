@@ -57,8 +57,10 @@ function buildE621Query(params) {
     // Minimum tag count for game quality
     tags.push('tagcount:>=50');
     // Base restrictions for game content
-    tags.push('-animated');
-    tags.push('-young');
+    tags.push('-type:mp4');
+    tags.push('-type:webm');
+    tags.push('-type:swf');
+    tags.push('-young -young_(lore)');
     // Custom criteria (allow user to add specific requirements)
     if (params.customCriteria?.trim()) {
         // Split custom criteria by spaces and add each as separate tag

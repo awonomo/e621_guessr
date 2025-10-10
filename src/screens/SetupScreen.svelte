@@ -335,6 +335,8 @@
 <style>
   .setup-screen {
     min-height: 100vh;
+    display: flex;
+    align-items: center;
     background: var(--bg-primary);
     padding: 2rem 0;
   }

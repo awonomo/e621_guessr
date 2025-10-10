@@ -17,24 +17,29 @@ interface DailyResult {
   completed_at: string;
 }
 
-// Blacklisted tags for daily challenges
+// BLACKLISTED tags
 const DAILY_BLACKLIST = [
   'young',
+  'young_(lore)',
   'cub',
-  'underage',
   'gore',
   'death',
   'suicide',
   'blood',
   'bad_parenting',
+  'babysitter',
   'incest_(lore)',
   'self-harm',
   'abuse',
+  'kidnapping',
+  'slave',
   'rape',
   'forced',
   'bestiality',
   'extreme_penetraton',
   'bestiality',
+  'anthro_on_feral',
+  'realistic_feral',
   'human_on_feral',
   'human_on_anthro',
   'birth',
@@ -62,9 +67,12 @@ function buildDailyE621Query(minPostScore: number): string {
   if (minPostScore > 0) {
     tags.push(`score:>=${minPostScore}`);
   }
-
   // Minimum tag count for game quality (50+ tags)
   tags.push('tagcount:>=50');
+  // filetype restrictions
+  tags.push('-type:mp4');
+  tags.push('-type:webm');
+  tags.push('-type:swf');
 
   return tags.join(' ');
 }
@@ -143,11 +151,17 @@ router.get('/:date/status', async (req, res) => {
         [date, player_name]
       );
 
+      // Handle rounds data - it might already be parsed or need parsing
+      let rounds = result.rows[0].rounds;
+      if (typeof rounds === 'string') {
+        rounds = JSON.parse(rounds);
+      }
+
       return res.json({
         completed: true,
         result: {
           score: result.rows[0].score,
-          rounds: JSON.parse(result.rows[0].rounds),
+          rounds: rounds,
           completed_at: result.rows[0].completed_at
         }
       });

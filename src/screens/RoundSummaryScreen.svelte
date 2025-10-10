@@ -6,8 +6,6 @@
   import RoundBreakdown from '../components/RoundBreakdown.svelte';
   
   let scrollContainer: HTMLElement;
-  let currentPage = 0; // 0 = summary, 1 = missed tags
-  let isScrolling = false;
   
   // Calculate round statistics
   $: roundNumber = ($currentSession?.currentRound || 0) + 1;
@@ -44,66 +42,10 @@
     return bestTag;
   }
   
-  function handleScroll(event: WheelEvent) {
-    if (isScrolling) return;
-    
-    const direction = Math.sign(event.deltaY);
-    
-    if (direction > 0 && currentPage === 0) {
-      // Scrolling down from summary to missed tags
-      flipToMissedTags();
-      event.preventDefault();
-    } else if (direction < 0 && currentPage === 1) {
-      // Scrolling up from missed tags to summary
-      flipToSummary();
-      event.preventDefault();
-    }
-  }
-  
-  function flipToMissedTags() {
-    if (isScrolling || currentPage === 1) return;
-    
-    isScrolling = true;
-    currentPage = 1;
-    
-    if (scrollContainer) {
-      scrollContainer.scrollTo({
-        top: scrollContainer.scrollHeight,
-        behavior: 'smooth'
-      });
-    }
-    
-    setTimeout(() => {
-      isScrolling = false;
-    }, 500);
-  }
-  
-  function flipToSummary() {
-    if (isScrolling || currentPage === 0) return;
-    
-    isScrolling = true;
-    currentPage = 0;
-    
-    if (scrollContainer) {
-      scrollContainer.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-    }
-    
-    setTimeout(() => {
-      isScrolling = false;
-    }, 500);
-  }
-  
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Enter') {
       event.preventDefault();
       nextRound();
-    } else if (event.key === 'ArrowDown' && currentPage === 0) {
-      flipToMissedTags();
-    } else if (event.key === 'ArrowUp' && currentPage === 1) {
-      flipToSummary();
     }
   }
   
@@ -156,7 +98,6 @@
   <div 
     class="content-container"
     bind:this={scrollContainer}
-    on:wheel={handleScroll}
   >
     <!-- Page 1: Round Summary -->
     <div class="summary-page">
@@ -217,17 +158,6 @@
     border-bottom: 1px solid var(--bg-secondary);
   }
   
-  .round-header {
-    position: fixed;
-    top: 4rem;
-    left: 0;
-    right: 0;
-    z-index: 90;
-    text-align: center;
-    background: var(--bg-primary);
-    padding: 1rem 0 2rem 0;
-  }
-  
   .round-title {
     font-size: 3rem;
     font-weight: 900;
@@ -271,12 +201,10 @@
     height: calc(100vh - 8rem);
     overflow-y: auto;
     scroll-behavior: smooth;
-    scroll-snap-type: y mandatory;
   }
   
   .summary-page, .breakdown-page {
     min-height: 100%;
-    scroll-snap-align: start;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -297,12 +225,11 @@
   .tags-count {
     font-size: 1.5rem;
     color: var(--text-secondary);
-    margin-bottom: 1rem;
     font-weight: 600;
   }
   
   .round-score {
-    font-size: 4rem;
+    font-size: 8rem;
     font-weight: 900;
     color: var(--text-accent);
     margin-bottom: 2rem;

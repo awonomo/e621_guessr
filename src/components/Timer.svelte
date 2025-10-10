@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { useInterval } from 'runed';
   import { currentSession, gameActions, currentState, currentRound, isPaused } from '../lib/gameStore';
   
   interface Props {
     onTimeUp: () => void;
     ontogglePause?: () => void;
+    variant?: 'desktop' | 'mobile';
   }
   
-  let { onTimeUp, ontogglePause }: Props = $props();
+  let { onTimeUp, ontogglePause, variant = 'desktop' }: Props = $props();
   
   let localTimeRemaining = $state(0);
   let previousState: string | undefined;
@@ -33,27 +33,33 @@
     previousState = $currentState;
   });
   
-  // Create interval that only runs when game is playing and not paused
-  const timerInterval = useInterval(() => {
-    console.log('[Timer] Tick - current time:', localTimeRemaining, 'paused:', $isPaused, 'state:', $currentState);
-    
-    if (localTimeRemaining > 0) {
-      localTimeRemaining--;
-      // Update the game store with the new time
-      gameActions.updateTimeRemaining(localTimeRemaining);
-    }
-  }, 1000, { immediate: false });
+  // Timer should only run when actively playing and not paused
+  let timerId: number | undefined;
   
-  // Control the interval based on game state and pause
   $effect(() => {
-    const shouldRun = $currentState === 'playing' && !$isPaused && localTimeRemaining > 0;
-    console.log('[Timer] Should run:', shouldRun, 'state:', $currentState, 'paused:', $isPaused, 'time:', localTimeRemaining);
-    
-    if (shouldRun) {
-      timerInterval.resume();
-    } else {
-      timerInterval.pause();
+    // Clear any existing timer
+    if (timerId) {
+      clearInterval(timerId);
+      timerId = undefined;
     }
+    
+    // Start timer only when all conditions are met
+    const shouldRunTimer = $currentState === 'playing' && !$isPaused && localTimeRemaining > 0;
+    
+    if (shouldRunTimer) {
+      timerId = setInterval(() => {
+        localTimeRemaining--;
+        gameActions.updateTimeRemaining(localTimeRemaining);
+      }, 1000);
+    }
+    
+    // Cleanup function
+    return () => {
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = undefined;
+      }
+    };
   });
 
   function formatTime(seconds: number): string {
@@ -67,41 +73,29 @@
   }
 </script>
 
-<div class="timer-container">
+<div class="timer-container {variant}">
   <div 
-    class="timer-display"
+    class="timer-display {variant}"
     class:warning={isWarningZone}
     class:pulse={pulseAnimation}
   >
-    <div class="time-text">
+    <div class="time-text {variant}">
       {formatTime(localTimeRemaining)}
     </div>
     
     <button 
-      class="pause-button"
+      class="pause-button {variant}"
       onclick={togglePause}
       title={!$isPaused ? 'Pause Game' : 'Resume Game'}
     >
       {#if !$isPaused}
         <!-- Pause icon -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-        </svg>
+         <span>⏯</span>
       {:else}
         <!-- Play icon -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M8 5v14l11-7L8 5z"/>
-        </svg>
+         <span>⏯</span>
       {/if}
     </button>
-  </div>
-  
-  <div class="timer-progress">
-    <div 
-      class="progress-bar"
-      style="width: {(localTimeRemaining / ($currentSession?.settings.timeLimit || 60)) * 100}%"
-      class:warning={isWarningZone}
-    ></div>
   </div>
 </div>
 
@@ -109,27 +103,36 @@
   .timer-container {
     position: relative;
     width: 100%;
+    margin: 0.5rem;
+  }
+  
+  .timer-container.mobile .timer-display {
+    background: transparent;
+    border: none;
+  }
+  
+  .timer-container.mobile .time-text {
+    color: var(--text-light);
+  }
+
+  .time-text.mobile {
+    font-size: 2rem;
+  }
+
+    .pause-button.mobile {
+    color: var(--text-light);
+    font-size: 2rem;
   }
   
   .timer-display {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
-    background: linear-gradient(145deg, 
-      var(--bg-secondary) 0%, 
-      var(--bg-primary) 100%);
-    border-radius: 8px 8px 0 0;
+    justify-content: center;
+    padding: 0.25rem 0.5rem;
+    background: #ccc;
+    border-radius: 8px;
     border: 2px solid transparent;
     position: relative;
-    
-    /* Upside-down trapezoid shape */
-    clip-path: polygon(
-      10% 0%, 
-      90% 0%, 
-      100% 100%, 
-      0% 100%
-    );
     
     transition: all 0.3s ease;
   }
@@ -141,21 +144,10 @@
     left: -2px;
     right: -2px;
     bottom: -2px;
-    background: linear-gradient(145deg, 
-      var(--accent-primary), 
-      var(--accent-secondary));
     border-radius: inherit;
     z-index: -1;
     opacity: 0;
     transition: opacity 0.3s ease;
-    
-    /* Match the trapezoid clip path */
-    clip-path: polygon(
-      10% 0%, 
-      90% 0%, 
-      100% 100%, 
-      0% 100%
-    );
   }
   
   .timer-display.warning {
@@ -173,12 +165,11 @@
   }
   
   .time-text {
-    font-size: 1.875rem;
-    font-weight: 700;
-    font-family: 'Courier New', monospace;
-    color: var(--text-primary);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    letter-spacing: 0.1em;
+    font-size: 2rem;
+    color: var(--text-accent);
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-dark);
   }
   
   .timer-display.warning .time-text {
@@ -188,49 +179,20 @@
   
   .pause-button {
     display: flex;
+    font-size: 2rem;
     align-items: center;
     justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    background: var(--bg-primary);
-    border: 2px solid var(--accent-primary);
-    border-radius: 50%;
-    color: var(--text-primary);
     cursor: pointer;
     transition: all 0.2s ease;
-    flex-shrink: 0; /* Prevent shrinking */
+    flex-shrink: 0;
+    background: transparent;
+    padding-left: 1rem;
   }
   
   .pause-button:hover {
-    background: var(--accent-primary);
-    color: var(--bg-primary);
-    transform: scale(1.05);
-  }
-  
-  .pause-button:active {
-    transform: scale(0.95);
-  }
-  
-  .timer-progress {
-    height: 4px;
-    background: var(--bg-primary);
-    border-radius: 0 0 4px 4px;
-    overflow: hidden;
-    margin-top: -1px;
-  }
-  
-  .progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, 
-      var(--accent-primary), 
-      var(--accent-secondary));
-    transition: width 1s linear;
-    border-radius: inherit;
-  }
-  
-  .progress-bar.warning {
-    background: linear-gradient(90deg, #ff4444, #cc0000);
-    box-shadow: 0 0 10px rgba(255, 68, 68, 0.6);
+    transform: scale(1.25);
+    background-color: transparent;
+    box-shadow: none;
   }
   
   @keyframes pulse {
@@ -247,21 +209,16 @@
   /* Mobile responsiveness */
   @media (max-width: 768px) {
     .timer-display {
-      padding: 0.5rem 0.75rem;
-      clip-path: polygon(5% 0%, 95% 0%, 100% 100%, 0% 100%);
-    }
-    
-    .timer-display::before {
-      clip-path: polygon(5% 0%, 95% 0%, 100% 100%, 0% 100%);
+      padding-left: 10px;
+      margin: 10px;
     }
     
     .time-text {
-      font-size: 1.25rem;
+      font-size: 1.5rem;
     }
     
     .pause-button {
-      width: 2rem;
-      height: 2rem;
+      font-size: 1.5rem;
     }
   }
 </style>

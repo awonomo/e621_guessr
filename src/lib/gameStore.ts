@@ -15,6 +15,17 @@ import {
 } from './types.js';
 import backendApi from './backendApi.js';
 
+// Player ID management
+function getOrCreatePlayerId(): string {
+  let playerId = localStorage.getItem('playerId');
+  if (!playerId) {
+    playerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('playerId', playerId);
+    console.log('[GameStore] Created new player ID:', playerId);
+  }
+  return playerId;
+}
+
 // Create writable stores
 const appState = writable<AppState>({
   currentState: 'home',
@@ -39,23 +50,6 @@ const appState = writable<AppState>({
   }
 });
 
-// Add debug logging for all state changes
-appState.subscribe(state => {
-  console.log('[GameStore] State changed to:', state.currentState);
-  if (state.currentSession) {
-    const session = state.currentSession;
-    console.log('[GameStore] Session active:', {
-      id: session.id.slice(0, 8) + '...',
-      round: session.currentRound + 1,
-      totalRounds: session.rounds.length,
-      totalScore: session.totalScore,
-      isActive: session.isActive
-    });
-  } else {
-    console.log('[GameStore] No active session');
-  }
-});
-
 // Derived stores for easy access
 export const currentState = derived(appState, $state => $state.currentState);
 export const currentSession = derived(appState, $state => $state.currentSession);
@@ -67,7 +61,6 @@ export const isPaused = derived(appState, $state => $state.isPaused);
 export const currentRound = derived(appState, $state => {
   if (!$state.currentSession || $state.currentSession.rounds.length === 0) return null;
   const round = $state.currentSession.rounds[$state.currentSession.currentRound] || null;
-  console.log('[CurrentRound Store] Updated:', round?.correctGuesses);
   return round;
 });
 
@@ -86,9 +79,7 @@ export const isLastRound = derived(appState, $state => {
 // Action functions
 export const gameActions = {
   navigateToHome() {
-    console.log('[GameStore] Navigating to home screen');
     appState.update(state => {
-      console.log('[GameStore] State updated to home, previous:', state.currentState);
       return {
         ...state,
         currentState: 'home'
@@ -97,9 +88,7 @@ export const gameActions = {
   },
 
   navigateToSetup() {
-    console.log('[GameStore] Navigating to setup screen');
     appState.update(state => {
-      console.log('[GameStore] State updated to setup, previous:', state.currentState);
       return {
         ...state,
         currentState: 'setup'
@@ -108,9 +97,6 @@ export const gameActions = {
   },
 
   startGame(settings: GameSettings, posts: Post[]) {
-    console.log('[GameStore] Starting new game with settings:', settings);
-    console.log('[GameStore] Posts loaded:', posts.length);
-    
     const sessionId = crypto.randomUUID();
     const now = new Date();
     
@@ -123,14 +109,11 @@ export const gameActions = {
       incorrectGuesses: 0,
       incorrectGuessTimestamps: [],
       score: 0,
-      startedAt: now
+      startedAt: now,
+      pauseCount: 0
     }));
 
-    console.log('[GameStore] Created', rounds.length, 'rounds');
-    console.log('[GameStore] Session ID:', sessionId);
-
     appState.update(state => {
-      console.log('[GameStore] Transitioning from', state.currentState, 'to countdown');
       return {
         ...state,
         currentSession: {
@@ -148,18 +131,14 @@ export const gameActions = {
     
     // Start preloading first round image immediately
     setTimeout(() => {
-      console.log('[GameStore] Starting image preload after delay');
       this.preloadCurrentRoundImage();
     }, 100);
   },
 
   async startRound() {
-    console.log('[GameStore] Starting round - preloading image');
-    
     try {
       // Preload current round image before transitioning to playing state
       await this.preloadCurrentRoundImage();
-      console.log('[GameStore] Image preload completed');
     } catch (error) {
       console.error('[GameStore] Image preload failed:', error);
     }
@@ -178,13 +157,8 @@ export const gameActions = {
         return state;
       }
       
-      console.log('[GameStore] Starting round', roundIndex + 1, 'of', state.currentSession.rounds.length);
-      console.log('[GameStore] Round post ID:', currentRoundData.post.id);
-      
       currentRoundData.startedAt = new Date();
       currentRoundData.timeRemaining = currentRoundData.timeLimit;
-      
-      console.log('[GameStore] Transitioning from', state.currentState, 'to playing');
       
       return {
         ...state,
@@ -195,8 +169,6 @@ export const gameActions = {
   },
 
   async submitGuess(guess: string): Promise<GuessResult> {
-    console.log('[GameStore] Submitting guess:', guess);
-    
     const state = get(appState);
     const session = state.currentSession;
     
@@ -212,7 +184,24 @@ export const gameActions = {
     }
 
     const normalizedGuess = guess.toLowerCase().trim();
-    console.log('[GameStore] Normalized guess:', normalizedGuess);
+    
+    // Check if guess matches custom criteria (blocked tags) - before aliasing
+    if (session.settings.customCriteria) {
+      const customCriteriaTags = session.settings.customCriteria
+        .split(/\s+/)
+        .map(tag => tag.trim().toLowerCase().replace(/\s+/g, '_'))
+        .filter(tag => tag.length > 0);
+      
+      // Direct match check
+      if (customCriteriaTags.includes(normalizedGuess)) {
+        return { 
+          guess, 
+          score: 0, 
+          isCorrect: false,
+          blockedByCustomCriteria: true
+        };
+      }
+    }
     
     // Rate limiting check - more lenient: 6 incorrect guesses in 15 seconds
     const now = Date.now();
@@ -230,7 +219,6 @@ export const gameActions = {
     }
 
     // Step 1: Check if guess matches any tag on the post
-    console.log('[GameStore] Step 1: Checking for direct tag match');
     let matchedTag: string | null = null;
     let matchedCategory: TagCategory | undefined;
     
@@ -240,22 +228,34 @@ export const gameActions = {
       if (tags.some(tag => tag.toLowerCase() === normalizedGuess)) {
         matchedTag = tags.find(tag => tag.toLowerCase() === normalizedGuess) || null;
         matchedCategory = tagCategory;
-        console.log('[GameStore] Direct match found:', matchedTag, 'in category:', tagCategory);
         break;
       }
     }
 
     if (!matchedTag) {
       // Step 2: No direct match - check if guess resolves to a tag on this post via alias
-      console.log('[GameStore] Step 2: No direct match, checking alias resolution');
       
       try {
         // Resolve the guess to its canonical tag name (if it's an alias)
         const resolvedTag = await backendApi.resolveTag(normalizedGuess);
-        console.log('[GameStore] Alias resolution result:', resolvedTag);
         
         if (resolvedTag) {
-          console.log('[GameStore] Guess resolves to tag:', resolvedTag);
+          // Check if resolved tag is blocked by custom criteria
+          if (session.settings.customCriteria) {
+            const customCriteriaTags = session.settings.customCriteria
+              .split(/\s+/)
+              .map(tag => tag.trim().toLowerCase().replace(/\s+/g, '_'))
+              .filter(tag => tag.length > 0);
+            
+            if (customCriteriaTags.includes(resolvedTag.toLowerCase())) {
+              return { 
+                guess, 
+                score: 0, 
+                isCorrect: false,
+                blockedByCustomCriteria: true
+              };
+            }
+          }
           
           // Now check if this resolved tag is on the current post
           for (const [cat, tags] of Object.entries(round.post.tags)) {
@@ -265,12 +265,9 @@ export const gameActions = {
               matchedTag = resolvedTag;
               matchedCategory = tagCategory;
               
-              console.log('[GameStore] Resolved tag found on post:', matchedTag, 'scoring with backend...');
-              
               // Now score the confirmed tag
               const backendResult = await backendApi.scoreTag(resolvedTag);
               if (backendResult && backendResult.isCorrect) {
-                console.log('[GameStore] Backend scored resolved tag:', backendResult);
                 
                 // Mark this as an alias match with slight point deduction
                 const aliasResult = await this.processCorrectGuess(
@@ -287,16 +284,13 @@ export const gameActions = {
               }
             }
           }
-          console.log('[GameStore] Resolved tag', resolvedTag, 'not found on current post');
         } else {
-          console.log('[GameStore] Guess does not resolve to any valid tag');
         }
       } catch (error) {
         console.warn('[GameStore] Alias resolution failed:', error);
       }
       
       // Step 3: No match found - record as incorrect
-      console.log('[GameStore] Step 3: No match found, processing as incorrect');
       return this.processIncorrectGuess(guess);
     }
 
@@ -315,7 +309,6 @@ export const gameActions = {
     );
     
     if (alreadyGuessed) {
-      console.log('[GameStore] Tag already guessed:', matchedTag);
       return { 
         guess, 
         score: 0, 
@@ -324,12 +317,10 @@ export const gameActions = {
     }
 
     // Step 4: Valid new guess - get score from backend
-    console.log('[GameStore] Step 4: Getting score for valid tag:', matchedTag);
     try {
       const backendResult = await backendApi.scoreTag(matchedTag);
       const score = backendResult?.score || this.fallbackScore(matchedTag, matchedCategory!);
       
-      console.log('[GameStore] Final score:', score, '(backend:', backendResult?.score, ')');
       return this.processCorrectGuess(guess, matchedTag, matchedCategory!, score, false);
     } catch (error) {
       console.warn('Backend scoring failed, using fallback:', error);
@@ -369,9 +360,6 @@ export const gameActions = {
       }
       newCorrectGuesses[category] = [...(newCorrectGuesses[category] || []), tagEntry];
       
-      console.log('[GameStore] Added tag to correctGuesses:', tagEntry);
-      console.log('[GameStore] Updated correctGuesses:', newCorrectGuesses);
-      
       // Create new round object with updated data
       const newRound = {
         ...round,
@@ -389,9 +377,6 @@ export const gameActions = {
         totalScore: session.totalScore + tagEntry.score
       };
       
-      console.log('[GameStore] Created new round:', newRound);
-      console.log('[GameStore] Created new session:', newSession);
-      
       // Update stats and return completely new state
       const newState = {
         ...state,
@@ -402,11 +387,8 @@ export const gameActions = {
         }
       };
       
-      console.log('[GameStore] Created new state:', newState);
       return newState;
     });
-
-    console.log('[GameStore] appState.update completed');
 
     return {
       guess,
@@ -476,8 +458,6 @@ export const gameActions = {
   },
 
   endRound() {
-    console.log('[GameStore] Ending current round');
-    
     appState.update(state => {
       if (!state.currentSession) {
         console.error('[GameStore] Cannot end round - no active session');
@@ -490,14 +470,7 @@ export const gameActions = {
       if (round) {
         round.endedAt = new Date();
         round.timeRemaining = 0;
-        
-        console.log('[GameStore] Round', roundIndex + 1, 'ended');
-        console.log('[GameStore] Round score:', round.score);
-        console.log('[GameStore] Correct guesses:', Object.values(round.correctGuesses).flat().length);
-        console.log('[GameStore] Total guesses:', round.totalGuesses);
       }
-      
-      console.log('[GameStore] Transitioning from', state.currentState, 'to roundSummary');
       
       return {
         ...state,
@@ -507,8 +480,6 @@ export const gameActions = {
   },
 
   nextRound() {
-    console.log('[GameStore] Advancing to next round');
-    
     appState.update(state => {
       if (!state.currentSession) {
         console.error('[GameStore] Cannot advance round - no active session');
@@ -519,20 +490,13 @@ export const gameActions = {
       const totalRounds = state.currentSession.rounds.length;
       const canAdvance = currentRoundIndex < totalRounds - 1;
       
-      console.log('[GameStore] Current round:', currentRoundIndex + 1, 'of', totalRounds);
-      console.log('[GameStore] Can advance:', canAdvance);
-      
       if (canAdvance) {
         const nextRoundIndex = currentRoundIndex + 1;
-        console.log('[GameStore] Advancing to round', nextRoundIndex + 1);
         
         // Start preloading the next round's image in background
         setTimeout(() => {
-          console.log('[GameStore] Starting next round image preload');
           this.preloadNextRoundImage();
         }, 1000);
-        
-        console.log('[GameStore] Transitioning from', state.currentState, 'to countdown');
         
         return {
           ...state,
@@ -544,20 +508,12 @@ export const gameActions = {
         };
       } else {
         // End game
-        console.log('[GameStore] Game complete - ending session');
-        
         const session = state.currentSession;
         session.endedAt = new Date();
         session.isActive = false;
         
-        console.log('[GameStore] Final total score:', session.totalScore);
-        console.log('[GameStore] Session duration:', 
-          session.endedAt.getTime() - session.startedAt.getTime(), 'ms');
-        
         // Update stats
         updateUserStats(state, session);
-        
-        console.log('[GameStore] Transitioning from', state.currentState, 'to gameSummary');
         
         return {
           ...state,
@@ -568,16 +524,34 @@ export const gameActions = {
   },
 
   togglePause() {
-    console.log('[GameStore] Toggling pause state');
-    
     appState.update(state => {
       if (state.currentState !== 'playing') {
         console.warn('[GameStore] Cannot pause - not in playing state');
         return state;
       }
       
+      const session = state.currentSession;
+      if (!session) return state;
+      
+      const currentRound = session.rounds[session.currentRound];
+      if (!currentRound) return state;
+      
+      // Check pause limit (3 pauses per round)
+      const MAX_PAUSES = 3;
+      const isTryingToPause = !state.isPaused;
+      
+      if (isTryingToPause && currentRound.pauseCount >= MAX_PAUSES) {
+        console.warn(`[GameStore] Pause limit reached (${MAX_PAUSES} pauses per round)`);
+        // Could dispatch a user notification here
+        return state;
+      }
+      
+      // Increment pause count when pausing (not when unpausing)
+      if (isTryingToPause) {
+        currentRound.pauseCount++;
+      }
+      
       const newPauseState = !state.isPaused;
-      console.log('[GameStore] Pause state changed to:', newPauseState);
       
       return {
         ...state,
@@ -587,15 +561,7 @@ export const gameActions = {
   },
 
   resetGame() {
-    console.log('[GameStore] Resetting game - returning to home');
-    
     appState.update(state => {
-      if (state.currentSession) {
-        console.log('[GameStore] Ending active session:', state.currentSession.id);
-      }
-      
-      console.log('[GameStore] Transitioning from', state.currentState, 'to home');
-      
       return {
         ...state,
         currentSession: null,
@@ -615,10 +581,7 @@ export const gameActions = {
       round.timeRemaining = timeRemaining;
       
       if (timeRemaining <= 0) {
-        console.log('[GameStore] Timer expired - ending round');
         round.endedAt = new Date();
-        
-        console.log('[GameStore] Transitioning from', state.currentState, 'to roundSummary (timer)');
         
         return {
           ...state,
@@ -655,26 +618,34 @@ export const gameActions = {
       const cstOffset = -6; // CST is UTC-6
       const cstTime = new Date(now.getTime() + (cstOffset * 60 * 60 * 1000));
       const today = cstTime.toISOString().split('T')[0]; // YYYY-MM-DD format
-      console.log('[GameStore] Loading daily challenge for:', today, '(CST)');
       
-      // Get player name (for now, use a default or from localStorage)
-      const playerName = localStorage.getItem('playerName') || 'Player';
+      // Get or create unique player ID
+      const playerId = getOrCreatePlayerId();
       
       // Check if player has already completed today's challenge
-      const statusResponse = await fetch(`/api/daily/${today}/status?player_name=${encodeURIComponent(playerName)}`);
+      const statusResponse = await fetch(`/api/daily/${today}/status?player_name=${encodeURIComponent(playerId)}`);
       if (statusResponse.ok) {
         const statusData = await statusResponse.json();
         if (statusData.completed) {
-          console.log('[GameStore] Player has already completed daily challenge:', statusData.result);
-          // TODO: Show completed daily challenge results or navigate to summary
-          alert(`You already completed today's daily challenge!\nScore: ${statusData.result.score}\nCompleted: ${new Date(statusData.result.completed_at).toLocaleString()}`);
+          console.log('[GameStore] Player has already completed daily challenge, showing results');
+          
+          // Get the daily challenge data to reconstruct the session
+          const challengeResponse = await fetch(`/api/daily/${today}`);
+          if (!challengeResponse.ok) {
+            alert('Failed to load daily challenge data');
+            return;
+          }
+          
+          const challengeData = await challengeResponse.json();
+          
+          // Reconstruct the completed game session
+          await this.showCompletedDailyChallenge(challengeData, statusData.result);
           return;
         }
       }
       
       // Load the daily challenge posts
       const response = await fetch(`/api/daily/${today}`);
-      console.log('[GameStore] Daily challenge response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -684,7 +655,6 @@ export const gameActions = {
       }
       
       const data = await response.json();
-      console.log('[GameStore] Daily challenge data:', data);
       
       // Create game settings from daily challenge config
       const gameSettings: GameSettings = {
@@ -718,6 +688,116 @@ export const gameActions = {
     } catch (error) {
       console.error('[GameStore] Failed to load daily challenge:', error);
       alert(`Network error loading daily challenge: ${error.message}`);
+    }
+  },
+
+  async showCompletedDailyChallenge(challengeData: any, resultData: any) {
+    console.log('[GameStore] Reconstructing completed daily challenge session');
+    
+    // Create game settings from daily challenge config
+    const gameSettings: GameSettings = {
+      mode: 'daily',
+      totalRounds: challengeData.config.ROUNDS,
+      timeLimit: challengeData.config.TIME_LIMIT,
+      ratings: ['safe', 'questionable', 'explicit'],
+      minUpvotes: challengeData.config.MIN_POST_SCORE || 10,
+      customCriteria: ''
+    };
+
+    // Store the daily challenge info in state
+    appState.update(state => ({
+      ...state,
+      dailyChallenge: {
+        date: challengeData.date,
+        posts: challengeData.posts,
+        settings: {
+          totalRounds: gameSettings.totalRounds,
+          timeLimit: gameSettings.timeLimit,
+          ratings: gameSettings.ratings,
+          minUpvotes: gameSettings.minUpvotes,
+          customCriteria: gameSettings.customCriteria
+        }
+      }
+    }));
+
+    // Reconstruct the completed game session from stored rounds data
+    const completedSession: GameSession = {
+      id: `daily-${challengeData.date}`,
+      settings: gameSettings,
+      rounds: resultData.rounds.map((roundData: any, index: number) => ({
+        post: challengeData.posts[index],
+        timeLimit: gameSettings.timeLimit,
+        timeRemaining: 0, // Round is completed
+        correctGuesses: roundData.correctGuesses || {},
+        totalGuesses: roundData.totalGuesses || 0,
+        incorrectGuesses: roundData.incorrectGuesses || 0,
+        incorrectGuessTimestamps: roundData.incorrectGuessTimestamps || [],
+        score: roundData.score || 0,
+        startedAt: new Date(roundData.startedAt || resultData.completed_at),
+        endedAt: new Date(roundData.endedAt || resultData.completed_at),
+        pauseCount: roundData.pauseCount || 0
+      })),
+      currentRound: gameSettings.totalRounds - 1, // Last round
+      totalScore: resultData.score,
+      startedAt: new Date(resultData.completed_at),
+      endedAt: new Date(resultData.completed_at),
+      isActive: false // Game is completed
+    };
+
+    // Set the reconstructed session and navigate to game summary
+    appState.update(state => ({
+      ...state,
+      currentSession: completedSession,
+      currentState: 'gameSummary'
+    }));
+  },
+
+  async submitDailyChallengeResult(session: GameSession): Promise<void> {
+    if (session.settings.mode !== 'daily' || !session.endedAt) {
+      return; // Not a completed daily challenge
+    }
+
+    try {
+      const playerId = getOrCreatePlayerId();
+      const now = new Date();
+      const cstOffset = -6; // CST is UTC-6
+      const cstTime = new Date(now.getTime() + (cstOffset * 60 * 60 * 1000));
+      const today = cstTime.toISOString().split('T')[0]; // YYYY-MM-DD format
+
+      const response = await fetch(`/api/daily/${today}/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          player_name: playerId,
+          score: session.totalScore,
+          rounds: session.rounds.map(round => ({
+            score: round.score,
+            totalGuesses: round.totalGuesses,
+            incorrectGuesses: round.incorrectGuesses,
+            correctGuesses: round.correctGuesses,
+            startedAt: round.startedAt.toISOString(),
+            endedAt: round.endedAt?.toISOString() || new Date().toISOString(),
+            pauseCount: round.pauseCount
+          }))
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[GameStore] Daily challenge result submitted successfully:', data);
+      } else {
+        const errorData = await response.json();
+        if (response.status === 409) {
+          // Already submitted - this is fine, don't show error
+          console.log('[GameStore] Daily challenge already submitted');
+        } else {
+          console.error('[GameStore] Failed to submit daily challenge result:', errorData);
+        }
+      }
+    } catch (error) {
+      console.error('[GameStore] Error submitting daily challenge result:', error);
     }
   },
 
@@ -763,17 +843,11 @@ export const gameActions = {
       return;
     }
     
-    console.log('[GameStore] Full post structure:', currentRound.post);
-    console.log('[GameStore] Post sample:', currentRound.post.sample);
-    console.log('[GameStore] Post file:', currentRound.post.file);
-    
     const imageUrl = currentRound.post.sample?.url || currentRound.post.file?.url;
-    console.log('[GameStore] Preloading current round image:', imageUrl);
     
     if (imageUrl) {
       try {
         await this.preloadImage(imageUrl);
-        console.log('[GameStore] Current round image preloaded successfully');
       } catch (error) {
         console.error('[GameStore] Failed to preload current round image:', error);
       }
@@ -796,12 +870,10 @@ export const gameActions = {
       const imageUrl = nextRound.post.sample?.url || 
                        nextRound.post.file?.url || 
                        (nextRound.post as any).file_url;
-      console.log('[GameStore] Preloading next round image:', imageUrl);
       
       if (imageUrl) {
         try {
           await this.preloadImage(imageUrl);
-          console.log('[GameStore] Next round image preloaded successfully');
         } catch (error) {
           console.error('[GameStore] Failed to preload next round image:', error);
         }
@@ -809,7 +881,6 @@ export const gameActions = {
         console.warn('[GameStore] No image URL found for next round');
       }
     } else {
-      console.log('[GameStore] No next round to preload');
     }
   }
 };
@@ -840,8 +911,9 @@ function updateUserStats(state: AppState, session: GameSession) {
 // Persistence
 export function saveToStorage() {
   try {
+    const playerId = getOrCreatePlayerId();
     appState.subscribe(state => {
-      localStorage.setItem('gameState', JSON.stringify({
+      localStorage.setItem(`gameState_${playerId}`, JSON.stringify({
         userStats: state.userStats,
         settings: state.settings
       }));
@@ -853,7 +925,8 @@ export function saveToStorage() {
 
 export function loadFromStorage() {
   try {
-    const saved = localStorage.getItem('gameState');
+    const playerId = getOrCreatePlayerId();
+    const saved = localStorage.getItem(`gameState_${playerId}`);
     if (saved) {
       const data = JSON.parse(saved);
       appState.update(state => ({
@@ -869,8 +942,9 @@ export function loadFromStorage() {
 
 function saveSettingsToStorage() {
   try {
+    const playerId = getOrCreatePlayerId();
     appState.subscribe(state => {
-      localStorage.setItem('gameSettings', JSON.stringify(state.settings));
+      localStorage.setItem(`gameSettings_${playerId}`, JSON.stringify(state.settings));
     });
   } catch (error) {
     console.warn('Failed to save settings:', error);

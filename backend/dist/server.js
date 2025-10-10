@@ -57,6 +57,7 @@ app.listen(PORT, () => {
     console.log(`🏆 Scoring API: http://localhost:${PORT}/api/scoring`);
     console.log(`🏷️  Tags API: http://localhost:${PORT}/api/tags`);
     console.log(`🔍 Debug API: http://localhost:${PORT}/api/debug/scoring-curves`);
+    console.log(`Scoring Visualization: http://localhost:${PORT}/api/debug/visualization`);
 });
 export default app;
 //# sourceMappingURL=server.js.map

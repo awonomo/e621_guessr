@@ -17,11 +17,11 @@ export class DatabaseManager {
         try {
             const result = await this.pool.query(text, params);
             const duration = Date.now() - start;
-            console.log('Query executed', { text: text.substring(0, 100), duration, rows: result.rowCount });
+            // console.log('Query executed', { text: text.substring(0, 100), duration, rows: result.rowCount });
             return result;
         }
         catch (error) {
-            console.error('Database query error:', error);
+            // console.error('Database query error:', error);
             throw error;
         }
     }

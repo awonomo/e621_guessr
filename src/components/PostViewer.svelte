@@ -1,8 +1,10 @@
 <script lang="ts">
   import type { Post } from '../lib/types';
+  import { currentRound } from '../lib/gameStore';
   
   export let post: Post;
   export let isPaused = false;
+  export let showBreakdownInfo = false;
   
   let imageLoaded = false;
   let imageError = false;
@@ -12,8 +14,11 @@
   $: imageUrl = post.sample?.url || post.file?.url || '';
   $: imageAlt = `Post ${post.id}`;
   
+  // Conditionally set image source to prevent inspector circumvention
+  $: actualImageSrc = isPaused ? '' : imageUrl;
+  
   // Check if image is already cached when URL changes
-  $: if (imageUrl) {
+  $: if (imageUrl && !isPaused) {
     checkIfImageCached();
   }
   
@@ -60,7 +65,7 @@
   }
   
   // Check if image is already loaded when element is bound
-  $: if (imgElement && imageUrl && imgElement.complete && imgElement.naturalWidth > 0) {
+  $: if (imgElement && actualImageSrc && imgElement.complete && imgElement.naturalWidth > 0) {
     imageLoaded = true;
     imageError = false;
   }
@@ -73,16 +78,37 @@
       <small>Post ID: {post.id}</small>
     </div>
   {:else}
-    <img
-      bind:this={imgElement}
-      src={imageUrl}
-      alt={imageAlt}
-      on:load={handleImageLoad}
-      on:error={handleImageError}
-      class="post-image"
-      class:loaded={imageLoaded}
-      loading="eager"
-    />
+    {#if showBreakdownInfo}
+      <a 
+        href="https://e621.net/posts/{post.id}" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        class="post-link"
+      >
+        <img
+          bind:this={imgElement}
+          src={actualImageSrc}
+          alt={imageAlt}
+          on:load={handleImageLoad}
+          on:error={handleImageError}
+          class="post-image"
+          class:loaded={imageLoaded}
+          loading="eager"
+        />
+        <div class="post-id">#{post.id}</div>
+      </a>
+    {:else}
+      <img
+        bind:this={imgElement}
+        src={actualImageSrc}
+        alt={imageAlt}
+        on:load={handleImageLoad}
+        on:error={handleImageError}
+        class="post-image"
+        class:loaded={imageLoaded}
+        loading="eager"
+      />
+    {/if}
     
     {#if !imageLoaded}
       <div class="loading-state">
@@ -95,6 +121,7 @@
   {#if isPaused}
     <div class="pause-overlay">
       <h2>Game Paused</h2>
+      <p class="pause-info">{3 - ($currentRound?.pauseCount || 0)} pauses remaining</p>
     </div>
   {/if}
 </div>
@@ -104,15 +131,14 @@
     position: relative;
     width: 100%;
     height: 100%;
-    max-height: 70vh;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: var(--border-radius);
     overflow: hidden;
-    background: var(--bg-secondary);
-    box-shadow: var(--shadow-light);
+    background: rgba(0, 0, 0, 0);
     transition: filter 0.3s ease;
+    min-height: 0;
   }
   
   .post-image {
@@ -124,10 +150,31 @@
     border-radius: var(--border-radius);
     opacity: 0;
     transition: opacity 0.3s ease;
+    display: block;
   }
   
   .post-image.loaded {
     opacity: 1;
+  }
+  
+  .post-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+  }
+  
+  .post-id {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    z-index: 5;
   }
   
   .loading-state {
@@ -166,9 +213,10 @@
     position: absolute;
     inset: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.95); /* Almost completely black */
+    background: var(--bg-secondary);
     color: var(--text-primary);
     z-index: 10;
     transition: opacity 0.3s ease;
@@ -177,11 +225,20 @@
   .pause-overlay h2 {
     font-size: 2.5rem;
     font-weight: 700;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, );
     margin: 0;
     color: #ffffff;
     letter-spacing: 0.1em;
     text-transform: uppercase;
+  }
+  
+  .pause-info {
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 1rem 0 0 0;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    opacity: 0.9;
   }
   
   @keyframes spin {
@@ -191,12 +248,12 @@
   
   /* Responsive sizing */
   @media (max-width: 768px) {
-    .post-viewer {
-      max-height: 50vh;
-    }
-    
     .pause-overlay h2 {
       font-size: 2rem;
+    }
+    
+    .pause-info {
+      font-size: 1rem;
     }
   }
 </style>

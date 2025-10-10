@@ -13,28 +13,38 @@ export const config = {
     },
     scoring: {
         maxPoints: 10000,
-        minPoints: 100,
+        minPoints: {
+            0: 100, // General
+            1: 100, // Artist
+            2: 100, // Contributor
+            3: 100, // Copyright
+            4: 100, // Character
+            5: 1000, // Species
+            6: 100, // Invalid
+            7: 100, // Meta
+            8: 100 // Lore
+        },
         sweetSpot: {
             0: { mu: 2.5, sigma: 0.8 }, // General
             1: { mu: 1.8, sigma: 0.7 }, // Artist
-            2: { mu: 1.8, sigma: 0.6 }, // Contributor
-            3: { mu: 2.2, sigma: 0.7 }, // Copyright
-            4: { mu: 1.7, sigma: 0.8 }, // Character
-            5: { mu: 2.3, sigma: 0.7 }, // Species
+            2: { mu: 2.2, sigma: 0.6 }, // Contributor
+            3: { mu: 1.9, sigma: 0.9 }, // Copyright
+            4: { mu: 2, sigma: 1.5 }, // Character
+            5: { mu: 2.3, sigma: 0.6 }, // Species
             6: { mu: 1.0, sigma: 0.5 }, // Invalid
-            7: { mu: 3.5, sigma: 0.6 }, // Meta
+            7: { mu: 3.2, sigma: 0.5 }, // Meta
             8: { mu: 3.8, sigma: 0.4 } // Lore
         },
         categoryWeights: {
-            0: 1, // General
-            1: 0.2, // Artist
-            2: 1, // Contributor
-            3: 1, // Copyright
-            4: 1.5, // Character
+            0: 1.15, // General
+            1: 0.4, // Artist
+            2: 1.2, // Contributor
+            3: 1.2, // Copyright
+            4: 0.75, // Character
             5: 1.3, // Species
-            6: 1, // Invalid
-            7: 1, // Meta
-            8: 1.3 // Lore
+            6: 0.5, // Invalid
+            7: 0.6, // Meta
+            8: 0.3 // Lore
         }
     },
     tagRefresh: {

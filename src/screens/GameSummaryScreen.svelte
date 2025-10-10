@@ -6,8 +6,6 @@
   import RoundBreakdown from '../components/RoundBreakdown.svelte';
   
   let scrollContainer: HTMLElement;
-  let currentPage = 0; // 0 = summary, 1+ = round breakdowns
-  let isScrolling = false;
   
   // Calculate game statistics
   $: totalScore = $currentSession?.totalScore || 0;
@@ -45,50 +43,10 @@
     return bestTag;
   }
   
-  function handleScroll(event: WheelEvent) {
-    if (isScrolling) return;
-    
-    const direction = Math.sign(event.deltaY);
-    const maxPages = rounds.length; // summary + round pages
-    
-    if (direction > 0 && currentPage < maxPages) {
-      // Scrolling down
-      scrollToPage(currentPage + 1);
-      event.preventDefault();
-    } else if (direction < 0 && currentPage > 0) {
-      // Scrolling up
-      scrollToPage(currentPage - 1);
-      event.preventDefault();
-    }
-  }
-  
-  function scrollToPage(pageIndex: number) {
-    if (isScrolling || pageIndex < 0 || pageIndex > rounds.length) return;
-    
-    isScrolling = true;
-    currentPage = pageIndex;
-    
-    if (scrollContainer) {
-      const targetScroll = pageIndex * scrollContainer.clientHeight;
-      scrollContainer.scrollTo({
-        top: targetScroll,
-        behavior: 'smooth'
-      });
-    }
-    
-    setTimeout(() => {
-      isScrolling = false;
-    }, 500);
-  }
-  
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Enter') {
       event.preventDefault();
       playAgain();
-    } else if (event.key === 'ArrowDown' && currentPage < rounds.length) {
-      scrollToPage(currentPage + 1);
-    } else if (event.key === 'ArrowUp' && currentPage > 0) {
-      scrollToPage(currentPage - 1);
     }
   }
   
@@ -110,6 +68,12 @@
   
   onMount(() => {
     document.addEventListener('keydown', handleKeydown);
+    
+    // Auto-submit daily challenge results
+    if ($currentSession && isDailyChallenge) {
+      gameActions.submitDailyChallengeResult($currentSession);
+    }
+    
     return () => {
       document.removeEventListener('keydown', handleKeydown);
     };
@@ -127,20 +91,31 @@
       <div></div> <!-- Spacer for daily challenge -->
     {/if}
     
-    <button class="icon-button share-button" on:click={shareResults} title="Share Results">
+    <!-- <button class="icon-button share-button" on:click={shareResults} title="Share Results">
       📤
-    </button>
+    </button> -->
   </div>
 
   <!-- Scrollable Content Container -->
   <div 
     class="content-container"
     bind:this={scrollContainer}
-    on:wheel={handleScroll}
   >
     <!-- Page 0: Game Summary -->
     <div class="summary-page">
       <div class="summary-content">
+        {#if isDailyChallenge}
+          <div class="daily-challenge-header">
+            <h1 class="daily-challenge-title">Daily Challenge</h1>
+            <h2 class="daily-challenge-date">{new Date().toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</h2>
+          </div>
+        {/if}
+        
         {#if isNewBest}
           <div class="new-best-badge">New Best!</div>
         {/if}
@@ -180,6 +155,7 @@
 
     <!-- Round Breakdown Pages -->
     {#each rounds as round, index}
+      <div class="round-breakdown-score"><h1 class="round-title">ROUND {index + 1}:</h1><p> {round.score.toLocaleString()} pts.</p></div>
       <RoundBreakdown roundData={round} roundNumber={index + 1} />
     {/each}
   </div>
@@ -238,12 +214,11 @@
     height: calc(100vh - 4rem);
     overflow-y: auto;
     scroll-behavior: smooth;
-    scroll-snap-type: y mandatory;
+    /* Removed mandatory scroll snapping to prevent erratic jumping */
   }
   
   .summary-page {
     min-height: 100%;
-    scroll-snap-align: start;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -266,16 +241,65 @@
     letter-spacing: 0.1em;
   }
   
+  .daily-challenge-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .daily-challenge-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--text-accent);
+    margin: 0 0 0.5rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-shadow: 0 2px 8px rgba(252, 179, 66, 0.3);
+  }
+  
+  .daily-challenge-date {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin: 0;
+    text-transform: none;
+    letter-spacing: 0.05em;
+  }
+  
   .total-score {
-    font-size: 5rem;
+    font-size: 8rem;
     font-weight: 900;
     color: var(--text-accent);
     margin-bottom: 2rem;
-    text-shadow: 0 4px 12px rgba(252, 179, 66, 0.4);
+    text-shadow: 0 2px 8px rgba(252, 179, 66, 0.3);
     font-variant-numeric: tabular-nums;
-    line-height: 1;
   }
-  
+
+   .round-breakdown-score {
+    border-top: 2px dotted var(--bg-secondary);
+    text-align: center;
+    padding-top: 9vw;
+    margin-top: 3rem;
+  }
+
+  .round-title {
+    display: inline-block;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--text-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0;
+  }
+
+  .round-breakdown-score p {
+    display: inline-block;
+    font-style: italic;
+    font-size: 2.5rem;
+    font-weight: 200;
+    color: var(--text-primary);
+    margin: 0 0 0 1rem;
+  }
+
   .stats-summary {
     font-size: 1.5rem;
     color: var(--text-secondary);
@@ -301,7 +325,6 @@
   
   .play-again-button:hover {
     transform: scale(1.05);
-    box-shadow: 0 8px 24px rgba(252, 179, 66, 0.4);
   }
   
   .play-again-button.daily {

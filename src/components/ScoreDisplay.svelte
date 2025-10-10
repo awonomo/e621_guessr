@@ -45,13 +45,29 @@
   // Calculate text size based on number of digits - made larger
   $: digitCount = displayScore.toString().length;
   $: fontSize = Math.max(2.5, 5.5 - (digitCount * 0.2)); // Scale down as numbers get longer
+  
+  // Check if we're in desktop mode
+  let isDesktop = true;
+  
+  onMount(() => {
+    const checkScreenSize = () => {
+      isDesktop = window.innerWidth > 768;
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+    };
+  });
 </script>
 
 <div class="score-display" class:glowing={isAnimating}>
   <div class="score-label">Score</div>
   <div 
     class="score-number"
-    style="font-size: {fontSize}rem;"
+    style="font-size: {isDesktop ? fontSize : 3}rem;"
   >
     {displayScore.toLocaleString()}
   </div>
@@ -60,7 +76,6 @@
 <style>
   .score-display {
     text-align: center;
-    margin-bottom: 2rem;
   }
   
   .score-label {
@@ -97,7 +112,7 @@
     }
     
     .score-label {
-      font-size: 1rem;
+      font-size: 0.75rem;
     }
   }
 </style>

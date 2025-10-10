@@ -59,13 +59,12 @@ app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🎮 Posts API: http://localhost:${PORT}/api/posts`);
-  console.log(`📅 Daily API: http://localhost:${PORT}/api/daily`);
-  console.log(`🏆 Scoring API: http://localhost:${PORT}/api/scoring`);
-  console.log(`🏷️  Tags API: http://localhost:${PORT}/api/tags`);
-  console.log(`🔍 Debug API: http://localhost:${PORT}/api/debug/scoring-curves`);
+  console.log(`🐰 Server running on http://localhost:${PORT}`);
+  console.log(`🦊 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`🐱 Posts API: http://localhost:${PORT}/api/posts`);
+  console.log(`🐷 Tags API: http://localhost:${PORT}/api/tags`);
+  console.log(`🐻 Scoring Parameters: http://localhost:${PORT}/api/debug/scoring-curves`);
+  console.log(`🐮Scoring Visualization Tool: http://localhost:${PORT}/api/debug/visualization`);
 });
 
 export default app;

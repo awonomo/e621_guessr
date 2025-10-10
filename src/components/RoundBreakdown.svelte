@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { RoundData, TagCategory } from '../lib/types';
-  import PostThumbnail from './PostThumbnail.svelte';
+  import PostViewer from './PostViewer.svelte';
   import { backendApi } from '../lib/backendApi';
   
   export let roundData: RoundData;
@@ -134,7 +134,9 @@
   }
   
   $: consolidatedTags = getConsolidatedTags();
-  $: orderedCategories = getCategoryDisplayOrder().filter(category => consolidatedTags[category]);
+  $: orderedCategories = getCategoryDisplayOrder().filter(category => 
+    consolidatedTags[category] && consolidatedTags[category].length > 0
+  );
 </script>
 
 <div class="round-breakdown">
@@ -142,7 +144,7 @@
     <!-- <h2 class="round-title">ROUND {roundNumber}</h2> -->
     
     <div class="post-section">
-      <PostThumbnail post={roundData.post} size="medium" />
+      <PostViewer post={roundData.post} showBreakdownInfo={true} />
     </div>
     
     <div class="tags-section">
@@ -184,7 +186,6 @@
 <style>
   .round-breakdown {
     min-height: 100vh;
-    scroll-snap-align: start;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -207,8 +208,7 @@
   }
   
   .post-section {
-    display: flex;
-    justify-content: center;
+    width: 100%;
     margin-bottom: 3rem;
   }
   

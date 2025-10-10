@@ -40,7 +40,7 @@
   .countdown-screen {
     position: fixed;
     inset: 0;
-    background: linear-gradient(135deg, var(--bg-primary) 0%, #0f1a2e 100%);
+    background: linear-gradient(135deg, var(--bg-primary) 0%, #0b1932 100%);
     display: flex;
     align-items: center;
     justify-content: center;
