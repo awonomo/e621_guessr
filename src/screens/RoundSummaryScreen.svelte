@@ -237,8 +237,6 @@
     font-variant-numeric: tabular-nums;
   }
   
-
-  
   .total-score {
     font-size: 2rem;
     margin-bottom: 4rem;
@@ -309,7 +307,7 @@
     }
     
     .round-score {
-      font-size: 3rem;
+      font-size: 6rem;
     }
     
     .total-score {

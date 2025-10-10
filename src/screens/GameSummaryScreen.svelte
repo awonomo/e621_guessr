@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { gameActions, currentSession, userStats } from '../lib/gameStore';
   import type { TagCategory, RoundData } from '../lib/types';
+  import { findBestScoringTag } from '../lib/utils';
   import BestTagDisplay from '../components/BestTagDisplay.svelte';
   import RoundBreakdown from '../components/RoundBreakdown.svelte';
   
@@ -17,31 +18,8 @@
     sum + Object.values(round.correctGuesses).flat().length, 0);
   
   // Find best scoring tag across all rounds
-  $: bestTag = findBestScoringTag();
+  $: bestTag = findBestScoringTag(rounds);
   $: isDailyChallenge = $currentSession?.settings.mode === 'daily';
-  
-    function findBestScoringTag() {
-    let bestTag = null;
-    let bestPoints = 0;
-    
-    rounds.forEach(round => {
-      if (round.correctGuesses) {
-        Object.entries(round.correctGuesses).forEach(([category, tagEntries]) => {
-          if (tagEntries) {
-            tagEntries.forEach(tagEntry => {
-              // Use the pre-calculated score from the backend
-              if (tagEntry.score > bestPoints) {
-                bestPoints = tagEntry.score;
-                bestTag = { tag: tagEntry.tag, category: category as TagCategory, points: tagEntry.score };
-              }
-            });
-          }
-        });
-      }
-    });
-    
-    return bestTag;
-  }
   
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Enter') {

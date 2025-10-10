@@ -115,6 +115,13 @@ export interface TagScoreEntry {
   score: number;
   category: TagCategory;
   wasFromAlias?: boolean;
+  timestamp: number;
+}
+
+export interface BestTag {
+  tag: string;
+  category: TagCategory;
+  score: number;
 }
 
 export interface GameStats {
@@ -126,6 +133,7 @@ export interface GameStats {
   accuracyRate: number;
   favoriteCategories: TagCategory[];
   dailyChallengesCompleted: number;
+  bestTag: BestTag | null;
 }
 
 export interface AppState {

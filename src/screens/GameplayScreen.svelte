@@ -102,7 +102,7 @@
     <!-- Scoreboard Area -->
     <div class="tag-list">
       <TagList 
-        correctGuesses={$currentRound?.correctGuesses}
+        roundData={$currentRound}
       />
     </div>
       

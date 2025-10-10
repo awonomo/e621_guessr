@@ -40,7 +40,8 @@ const appState = writable<AppState>({
     totalTagsGuessed: 0,
     accuracyRate: 0,
     favoriteCategories: [],
-    dailyChallengesCompleted: 0
+    dailyChallengesCompleted: 0,
+    bestTag: null
   },
   settings: {
     soundEnabled: true,
@@ -350,16 +351,17 @@ export const gameActions = {
         actualTag: wasFromAlias ? actualTag : undefined,
         score: Math.round(score),
         category,
-        wasFromAlias
+        wasFromAlias,
+        timestamp: Date.now()
       };
 
-      // Add to correct guesses
+      // Add to correct guesses (by category)
       const newCorrectGuesses = { ...round.correctGuesses };
       if (!newCorrectGuesses[category]) {
         newCorrectGuesses[category] = [];
       }
       newCorrectGuesses[category] = [...(newCorrectGuesses[category] || []), tagEntry];
-      
+
       // Create new round object with updated data
       const newRound = {
         ...round,
@@ -378,13 +380,24 @@ export const gameActions = {
       };
       
       // Update stats and return completely new state
+      const newUserStats = {
+        ...state.userStats,
+        totalTagsGuessed: state.userStats.totalTagsGuessed + 1
+      };
+      
+      // Check if this is the new best tag
+      if (!newUserStats.bestTag || tagEntry.score > newUserStats.bestTag.score) {
+        newUserStats.bestTag = {
+          tag: guess,
+          category,
+          score: tagEntry.score
+        };
+      }
+      
       const newState = {
         ...state,
         currentSession: newSession,
-        userStats: {
-          ...state.userStats,
-          totalTagsGuessed: state.userStats.totalTagsGuessed + 1
-        }
+        userStats: newUserStats
       };
       
       return newState;

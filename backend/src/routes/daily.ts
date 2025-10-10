@@ -80,8 +80,7 @@ function buildDailyE621Query(minPostScore: number): string {
 const DAILY_CONFIG = {
   ROUNDS: 5,
   TIME_LIMIT: 120, // 2 minutes in seconds
-  MIN_SCORE_THRESHOLD: 250, // Daily challenge passing score
-  MIN_POST_SCORE: 200 // Minimum e621 post score for quality
+  MIN_POST_SCORE: 400 // Minimum e621 post score for quality
 };
 
 /**
@@ -231,8 +230,7 @@ router.post('/:date/submit', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Daily challenge result saved',
-      passed: score >= DAILY_CONFIG.MIN_SCORE_THRESHOLD
+      message: 'Daily challenge result saved'
     });
 
   } catch (error) {

@@ -217,18 +217,27 @@
     
     <form class="setup-form" onsubmit={(e) => { e.preventDefault(); startGame(); }}>
       <div class="form-grid">
-        <!-- Time limit -->
+        <!-- Round Length -->
         <div class="form-group">
-          <label for="timeLimit">Time Limit (seconds)</label>
-          <input 
-            id="timeLimit" 
-            type="number" 
-            min="10" 
-            max="600"
-            step="10"
-            bind:value={timeLimit} 
-          />
-          <span class="help-text">{Math.floor(timeLimit / 60)}:{String(timeLimit % 60).padStart(2, '0')} per round</span>
+          <label>Round Length</label>
+          <div class="timelimit-options">
+            {#each [30, 60, 120, 300, -1] as option}
+              <button
+                type="button"
+                class="timelimit-button"
+                class:selected={option === timeLimit}
+                onclick={() => {
+                  timeLimit = option;
+                  // if (option === -1) gameMode = 'endless'; // Not wired up yet
+                }}
+              >
+                {option === 30 ? '30s' : option === 60 ? '60s' : option === 120 ? '2m' : option === 300 ? '5m' : '∞'}
+              </button>
+            {/each}
+          </div>
+          <span class="help-text">
+            {timeLimit === -1 ? 'No time limit (infinite)' : `${Math.floor(timeLimit / 60)}:${String(timeLimit % 60).padStart(2, '0')} per round, 5 rounds per game`}
+          </span>
         </div>
 
         <!-- Game mode -->
@@ -405,7 +414,7 @@
     grid-column: span 2;
   }
   
-  label {
+  label, legend {
     color: var(--text-primary);
     font-weight: 600;
     margin-bottom: 0.5rem;
@@ -472,6 +481,30 @@
   }
   
   .rating-button.selected:hover {
+    background: var(--text-accent);
+  }
+
+    .timelimit-options {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .timelimit-button {
+    padding: 0.5rem 1.25rem;
+    border: none;
+    border-radius: var(--border-radius);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  .timelimit-button.selected {
+    background: var(--bg-accent);
+    color: var(--bg-primary);
+  }
+  .timelimit-button.selected:hover {
     background: var(--text-accent);
   }
   

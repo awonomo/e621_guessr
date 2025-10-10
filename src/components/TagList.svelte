@@ -1,15 +1,14 @@
 <script lang="ts">
   import { onMount, afterUpdate } from 'svelte';
-  import type { TagCategory, TagScoreEntry } from '../lib/types';
-  
-  export let correctGuesses: Partial<Record<TagCategory, TagScoreEntry[]>>;
+  import type { TagCategory, TagScoreEntry, RoundData } from '../lib/types';
+
+  export let roundData: RoundData;
   
   interface TagEntry {
     tag: string;
     actualTag?: string;
     category: TagCategory;
     points: number;
-    order: number;
     wasFromAlias?: boolean;
     uniqueKey: string; // Add unique key for Svelte each blocks
   }
@@ -17,71 +16,24 @@
   let tagEntries: TagEntry[] = [];
   let containerElement: HTMLElement;
   let canScroll = false;
-  let tagOrder = 0;
   
   // Track previous guesses to detect new ones and manage animations
   let previousGuesses = new Set<string>();
   let newlyAddedTags = new Set<string>();
   
-  // Convert correctGuesses to sorted array - sort by most recent guess (order)
-  $: if (correctGuesses) {
-    const currentGuesses = new Set<string>();
-    
-    // First, collect all current guesses to check if anything actually changed
-    Object.entries(correctGuesses).forEach(([category, tagEntries]) => {
-      if (tagEntries) {
-        tagEntries.forEach(entry => {
-          const uniqueKey = `${entry.tag}-${category}`;
-          currentGuesses.add(uniqueKey);
-        });
-      }
-    });
-    
-    // Only update if there are actual new guesses
-    const hasNewGuesses = Array.from(currentGuesses).some(guess => !previousGuesses.has(guess));
-    
-    if (hasNewGuesses || tagEntries.length === 0) {
-      // Clear newly added tags from previous update
-      newlyAddedTags.clear();
-      
-      const newEntries: TagEntry[] = [];
-      
-      Object.entries(correctGuesses).forEach(([category, tagScoreEntries]) => {
-        if (tagScoreEntries) {
-          tagScoreEntries.forEach(scoreEntry => {
-            const uniqueGuessKey = `${scoreEntry.tag}-${category}`;
-            
-            // If this is a new guess, increment order and mark as newly added
-            if (!previousGuesses.has(uniqueGuessKey)) {
-              tagOrder++;
-              newlyAddedTags.add(uniqueGuessKey);
-            }
-            
-            newEntries.push({
-              tag: scoreEntry.tag,
-              actualTag: scoreEntry.actualTag,
-              category: category as TagCategory,
-              points: scoreEntry.score,
-              order: tagOrder,
-              wasFromAlias: scoreEntry.wasFromAlias,
-              uniqueKey: `${scoreEntry.tag}-${category}-${scoreEntry.score}` // Use score to ensure uniqueness
-            });
-          });
-        }
-      });
-      
-      // Sort by most recent guess (order descending) - newest first
-      newEntries.sort((a, b) => b.order - a.order);
-      
-      tagEntries = newEntries;
-      previousGuesses = currentGuesses;
-      
-      // Clear newly added tags after a short delay to remove animation
-      setTimeout(() => {
-        newlyAddedTags.clear();
-        newlyAddedTags = new Set(newlyAddedTags); // Trigger reactivity
-      }, 500);
-    }
+  // Flatten all correct guesses and sort by timestamp (most recent at top)
+  $: if (roundData && roundData.correctGuesses) {
+    tagEntries = Object.values(roundData.correctGuesses)
+      .flat()
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .map((scoreEntry, idx) => ({
+        tag: scoreEntry.tag,
+        actualTag: scoreEntry.actualTag,
+        category: scoreEntry.category,
+        points: scoreEntry.score,
+        wasFromAlias: scoreEntry.wasFromAlias,
+        uniqueKey: `${scoreEntry.tag}-${scoreEntry.category}-${scoreEntry.score}-${scoreEntry.timestamp}`
+      }));
   }
   
   // Check if container can scroll
