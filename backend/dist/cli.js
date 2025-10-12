@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Load environment variables from .env file
+import 'dotenv/config';
 import { Command } from 'commander';
 import DatabaseInitializer from './scripts/dbInit.js';
 import TagDataManager from './services/TagDataManager.js';
@@ -7,7 +9,7 @@ import db from './database/connection.js';
 const program = new Command();
 program
     .name('tag-game-cli')
-    .description('CLI tools for e621 Tag Challenge backend')
+    .description('CLI tools for e621_guessr backend')
     .version('1.0.0');
 // Database commands
 const dbCommand = program

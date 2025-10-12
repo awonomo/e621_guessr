@@ -1,10 +1,55 @@
+/**
+ * Parse DATABASE_URL for Railway/production deployments
+ * Format: postgresql://user:password@host:port/database
+ */
+function parseDatabaseUrl(databaseUrl) {
+    try {
+        const url = new URL(databaseUrl);
+        if (url.protocol !== 'postgresql:') {
+            throw new Error('Invalid DATABASE_URL protocol. Expected postgresql:');
+        }
+        return {
+            host: url.hostname,
+            port: parseInt(url.port) || 5432,
+            database: url.pathname.slice(1), // Remove leading slash
+            user: decodeURIComponent(url.username),
+            password: decodeURIComponent(url.password),
+        };
+    }
+    catch (error) {
+        console.error('Failed to parse DATABASE_URL:', error);
+        throw new Error('Invalid DATABASE_URL format');
+    }
+}
+// Get database configuration - prefer DATABASE_URL for production, fallback to individual vars
+const databaseUrl = process.env.DATABASE_URL;
+const dbConfigFromUrl = databaseUrl ? parseDatabaseUrl(databaseUrl) : null;
+// Debug logging for DATABASE_URL parsing
+console.log('🔍 DATABASE_URL from env:', process.env.DATABASE_URL);
+console.log('🔍 Parsed result:', dbConfigFromUrl);
+// Log database configuration for debugging
+console.log('🗃️  Database Configuration:');
+if (dbConfigFromUrl) {
+    console.log(`   📍 Using DATABASE_URL: ${databaseUrl.replace(/:([^:@]{4})[^:@]*@/, ':$1****@')}`);
+    console.log(`   🏠 Host: ${dbConfigFromUrl.host}:${dbConfigFromUrl.port}`);
+    console.log(`   📊 Database: ${dbConfigFromUrl.database}`);
+    console.log(`   👤 User: ${dbConfigFromUrl.user}`);
+}
+else {
+    console.log('   📍 Using individual environment variables:');
+    console.log(`   🏠 Host: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || '5432'}`);
+    console.log(`   📊 Database: ${process.env.DB_NAME || 'e621_guessr'}`);
+    console.log(`   👤 User: ${process.env.DB_USER || process.env.USER || 'postgres'}`);
+}
+console.log(`   🔒 SSL: ${process.env.NODE_ENV === 'production' ? 'enabled' : 'disabled'}`);
+console.log();
 export const config = {
     database: {
-        host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '5432'),
-        database: process.env.DB_NAME || 'e621_guessr',
-        user: process.env.DB_USER || process.env.USER || 'postgres',
-        password: process.env.DB_PASSWORD || '',
+        host: dbConfigFromUrl?.host || process.env.DB_HOST || 'localhost',
+        port: dbConfigFromUrl?.port || parseInt(process.env.DB_PORT || '5432'),
+        database: dbConfigFromUrl?.database || process.env.DB_NAME || 'e621_guessr',
+        user: dbConfigFromUrl?.user || process.env.DB_USER || process.env.USER || 'postgres',
+        password: dbConfigFromUrl?.password || process.env.DB_PASSWORD || '',
         // Add connection options for better compatibility
         ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
         max: 20,
