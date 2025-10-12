@@ -14,13 +14,10 @@ import {
 } from '../middleware/validation.js';
 import { z } from 'zod';
 import { readFileSync } from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+import { join } from 'path';
 
 // Get version from package.json
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const packageJson = JSON.parse(readFileSync(join(__dirname, '../../../package.json'), 'utf8'));
+const packageJson = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'));
 const VERSION = packageJson.version;
 
 // E621 API configuration
