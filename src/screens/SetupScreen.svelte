@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { gameActions } from '../lib/gameStore';
+  import backendApi from '../lib/backendApi';
   import type { GameSettings, Rating } from '../lib/types';
   
   // Settings persistence key
@@ -11,9 +12,9 @@
     timeLimit: 120,
     gameMode: 'classic' as const,
     ratings: {
-      safe: false,
-      questionable: true,
-      explicit: true
+      safe: true,
+      questionable: false,
+      explicit: false
     },
     minUpvotes: 250,
     useMinUpvotes: true,
@@ -43,7 +44,7 @@
         minUpvotes = settings.minUpvotes ?? defaultSettings.minUpvotes;
         useMinUpvotes = settings.useMinUpvotes ?? defaultSettings.useMinUpvotes;
         customCriteria = settings.customCriteria ?? defaultSettings.customCriteria;
-        console.log('🔄 Loaded setup settings:', settings);
+        console.log('🔄 Loaded setup settings:');
       }
     } catch (error) {
       console.warn('⚠️ Failed to load setup settings:', error);
@@ -70,7 +71,7 @@
         customCriteria
       };
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      console.log('💾 Saved setup settings:', settings);
+      console.log('💾 Saved setup settings');
     } catch (error) {
       console.warn('⚠️ Failed to save setup settings:', error);
     }
@@ -165,10 +166,10 @@
         .filter(([, selected]) => selected)
         .map(([rating]) => rating);
       
-      const url = `/api/posts?limit=5&ratings=${selectedRatings.join(',')}&minScore=${minUpvotes}&customCriteria=${encodeURIComponent(customCriteria)}&tags=${encodeURIComponent('')}`;
-      
-      console.log('🔍 Fetching posts with query:', query);
-      
+      const url = `${backendApi.baseUrl}/api/posts?limit=5&ratings=${selectedRatings.join(',')}&minScore=${minUpvotes}&customCriteria=${encodeURIComponent(customCriteria)}&tags=${encodeURIComponent('')}`;
+
+      console.log('🔍 Fetching posts');
+
       const response = await fetch(url);
       const data = await response.json();
       

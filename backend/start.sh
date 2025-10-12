@@ -1,7 +1,7 @@
 #!/bin/bash
 # E6 Tag Challenge - Quick Startup Script
 
-echo "🚀 Starting E6 Tag Challenge Backend..."
+echo "starting e621_guessr backend..."
 
 # Check PostgreSQL
 if ! brew services list | grep -q "postgresql.*started"; then

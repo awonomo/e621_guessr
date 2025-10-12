@@ -1,8 +1,16 @@
 import express from 'express';
 import fetch from 'node-fetch';
 import { z } from 'zod';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { createError } from '../middleware/errorHandler.js';
 const router = express.Router();
+// Get version from package.json
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJson = JSON.parse(readFileSync(join(__dirname, '../../../package.json'), 'utf8'));
+const VERSION = packageJson.version;
 // Validation schemas
 const postsQuerySchema = z.object({
     tags: z.string().optional(),
@@ -14,7 +22,7 @@ const postsQuerySchema = z.object({
 });
 // E621 API configuration
 const E621_BASE_URL = 'https://e621.net';
-const USER_AGENT = 'e621_guesst/2.0 (by awonomo)';
+const USER_AGENT = `e621_guessr/${VERSION} (https://github.com/awonomo/e621_guessr)`;
 // Helper function to build E621 query
 function buildE621Query(params) {
     const tags = [];
@@ -109,7 +117,7 @@ router.get('/', async (req, res, next) => {
         const apiUrl = `${E621_BASE_URL}/posts.json?limit=${query.limit}&page=${query.page}&tags=${encodeURIComponent(e621Query)}`;
         const response = await fetch(apiUrl, {
             headers: {
-                'User-Agent': 'awonomo/e621guessr by awonomo',
+                'User-Agent': USER_AGENT,
                 'Accept': 'application/json'
             }
         });

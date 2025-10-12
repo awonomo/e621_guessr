@@ -7,7 +7,7 @@
  */
 
 const ADMIN_KEY = process.env.ADMIN_KEY || 'dev_admin_2024';
-const API_BASE = process.env.API_BASE || 'http://localhost:3001';
+const API_BASE = process.env.BACKEND_URL || 'http://localhost:3001';
 
 async function makeRequest(endpoint, method = 'GET', body = null) {
   const url = `${API_BASE}/api/admin${endpoint}`;
@@ -117,7 +117,7 @@ Examples:
 
 Environment Variables:
   ADMIN_KEY     Admin authentication key (default: dev_admin_2024)
-  API_BASE      Backend server URL (default: http://localhost:3001)
+  BACKEND_URL   Backend server URL (default: http://localhost:3001)
 `);
 }
 

@@ -49,21 +49,21 @@
 <div class="age-verification-overlay" role="dialog" aria-labelledby="age-title" aria-describedby="age-description">
   <div class="age-modal">
     <div class="modal-header">
-      <h1 id="age-title" class="modal-title">Age Verification Required</h1>
+      <h1 id="age-title" class="modal-title">Over 18?</h1>
     </div>
     
     <div class="modal-body">
       <div class="warning-icon">⚠️</div>
       
-      <p id="age-description" class="age-message">
+      <!-- <p id="age-description" class="age-message">
         This website contains mature content that may not be suitable for minors.
-      </p>
+      </p> -->
       
       <p class="age-requirement">
         <strong>You must be 18 years or older to access this website.</strong>
       </p>
       
-      <p class="legal-notice">
+      <!-- <p class="legal-notice">
         By clicking "I am 18 or older", you confirm that:
       </p>
       
@@ -71,7 +71,7 @@
         <li>You are at least 18 years of age</li>
         <li>You are legally permitted to view mature content in your jurisdiction</li>
         <li>You understand this site may contain adult-oriented material</li>
-      </ul>
+      </ul> -->
     </div>
     
     <div class="modal-footer">

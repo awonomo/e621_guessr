@@ -2,6 +2,16 @@ import { Router } from 'express';
 import db from '../database/connection.js';
 import { checkPostAgainstBlacklist } from '../utils/blacklist.js';
 import { validateParams, validateQuery, validateBody, dailyParamsSchema, dailySubmissionSchema, dailyStatusSchema } from '../middleware/validation.js';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+// Get version from package.json
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJson = JSON.parse(readFileSync(join(__dirname, '../../../package.json'), 'utf8'));
+const VERSION = packageJson.version;
+// E621 API configuration
+const E621_USER_AGENT = `e621_guessr/${VERSION} (https://github.com/awonomo/e621_guessr)`;
 const router = Router();
 // Cache for daily challenge blacklisted tags (fetched from database)
 let DAILY_BLACKLIST = [];
@@ -220,7 +230,7 @@ async function generateDailyChallenge() {
             const apiUrl = `https://e621.net/posts.json?tags=${encodeURIComponent(queryTags)}&limit=1`;
             const response = await fetch(apiUrl, {
                 headers: {
-                    'User-Agent': 'e621Guessr/1.0 (https://github.com/awonomo/e621_guessr)'
+                    'User-Agent': E621_USER_AGENT
                 }
             });
             if (!response.ok) {

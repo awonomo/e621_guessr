@@ -9,6 +9,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "cli": "tsx src/cli.ts",
+    "blacklist": "node scripts/manage-blacklist.js",
     "setup": "tsx src/cli.ts setup",
     "db:init": "tsx src/cli.ts db init",
     "db:status": "tsx src/cli.ts db status",

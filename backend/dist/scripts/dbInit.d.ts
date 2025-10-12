@@ -8,6 +8,10 @@ export declare class DatabaseInitializer {
      */
     private ensureExtensions;
     /**
+     * Populate the daily blacklist tags
+     */
+    private populateBlacklist;
+    /**
      * Check if database is properly initialized
      */
     checkDatabaseStatus(): Promise<boolean>;

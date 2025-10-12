@@ -12,6 +12,12 @@ yarn-error.log*
 # Database files with sensitive content
 backend/populate_blacklist.sql
 
+# Private documentation (deployment and internal guides)
+DEPLOYMENT.md
+backend/SCORING_SYSTEM_GUIDE.md
+VERSIONING.md
+CHANGELOG.md
+
 # Logs
 logs
 *.log

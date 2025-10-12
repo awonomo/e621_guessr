@@ -8,12 +8,12 @@ export interface BackendTagScore {
 }
 
 class BackendApiService {
-  private baseUrl: string;
+  public baseUrl: string;
   
   constructor() {
     // Use environment-based URL configuration
     this.baseUrl = import.meta.env.PROD 
-      ? (import.meta.env.VITE_BACKEND_URL || 'https://e621-guessr-backend.railway.app')
+      ? (import.meta.env.VITE_BACKEND_URL || '')
       : ''; // Use relative URLs in development (Vite proxy)
   }
 

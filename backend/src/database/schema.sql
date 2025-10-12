@@ -118,6 +118,16 @@ CREATE INDEX IF NOT EXISTS idx_daily_challenges_date ON daily_challenges(date);
 CREATE INDEX IF NOT EXISTS idx_daily_results_date ON daily_results(date);
 CREATE INDEX IF NOT EXISTS idx_daily_results_score ON daily_results(date, score DESC);
 
+-- Daily blacklist tags table for content filtering
+CREATE TABLE IF NOT EXISTS daily_blacklist_tags (
+    id SERIAL PRIMARY KEY,
+    tag VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index for daily blacklist tags
+CREATE INDEX IF NOT EXISTS idx_daily_blacklist_tags_tag ON daily_blacklist_tags(tag);
+
 -- Leaderboards table (disabled - using local storage for stats)
 -- CREATE TABLE IF NOT EXISTS leaderboard_entries (
 --     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

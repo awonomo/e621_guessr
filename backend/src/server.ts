@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || 'https://e621-guessr.vercel.app']
+    ? process.env.FRONTEND_URL
     : ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true
 }));
@@ -64,12 +64,17 @@ app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🐰 Server running on http://localhost:${PORT}`);
-  console.log(`🦊 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🐱 Posts API: http://localhost:${PORT}/api/posts`);
-  console.log(`🐷 Tags API: http://localhost:${PORT}/api/tags`);
-  console.log(`🐻 Scoring Parameters: http://localhost:${PORT}/api/debug/scoring-curves`);
-  console.log(`🐮Scoring Visualization Tool: http://localhost:${PORT}/api/debug/visualization`);
+  // Determine base URL for API endpoints (matches frontend baseUrl logic)
+  const baseUrl = process.env.NODE_ENV === 'production' 
+    ? (process.env.BACKEND_URL || `http://localhost:${PORT}`)
+    : `http://localhost:${PORT}`;
+  
+  console.log(`🐰 Server running on ${baseUrl}`);
+  console.log(`🦊 Health check: ${baseUrl}/api/health`);
+  console.log(`🐱 Posts API: ${baseUrl}/api/posts`);
+  console.log(`🐷 Tags API: ${baseUrl}/api/tags`);
+  console.log(`🐻 Scoring Parameters: ${baseUrl}/api/debug/scoring-curves`);
+  console.log(`🐮Scoring Visualization Tool: ${baseUrl}/api/debug/visualization`);
   
   // Start the scheduler for automated tasks
   schedulerService.start();

@@ -57,11 +57,20 @@ A Node.js/Express backend API for the e621 Tag Challenge game, featuring tag sco
    npm run setup
    
    # Or step by step:
-   npm run db:init     # Initialize database schema
+   npm run db:init     # Initialize database schema + blacklist data
    npm run tags:refresh # Download tag data (takes ~5-10 minutes)
    ```
 
-5. **Start Development Server**
+5. **Blacklist Configuration** (Optional)
+   
+   The database initialization automatically populates a content blacklist for daily challenges.
+   
+   - **Development**: Uses `populate_blacklist_example.sql` with placeholder tags
+   - **Production**: Create `populate_blacklist.sql` with your actual blacklist (gitignored)
+   
+   The blacklist filters out sensitive content from daily challenge generation.
+
+6. **Start Development Server**
    ```bash
    npm run dev
    ```
@@ -132,19 +141,22 @@ All endpoints require `X-Admin-Key` header with the admin key.
 
 #### CLI Tool
 ```bash
-# List all daily challenge blacklisted tags
+# Use the npm script (recommended)
+npm run blacklist list
+npm run blacklist add "inappropriate_tag"
+npm run blacklist remove 5
+
+# Or run directly
 node scripts/manage-blacklist.js list
-
-# Add a tag to daily challenge blacklist
 node scripts/manage-blacklist.js add "inappropriate_tag"
-
-# Remove from daily challenge blacklist by ID or name
 node scripts/manage-blacklist.js remove 5
 node scripts/manage-blacklist.js remove "tag_name"
-
-# Bulk add multiple tags to daily challenge blacklist
 node scripts/manage-blacklist.js bulk-add tag1 tag2 tag3
 ```
+
+**Environment Variables:**
+- `ADMIN_KEY` - Admin authentication key (default: `dev_admin_2024`)
+- `BACKEND_URL` - Backend server URL for production (default: `http://localhost:3001`)
 
 #### cURL Examples
 ```bash

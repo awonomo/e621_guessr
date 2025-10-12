@@ -17,6 +17,9 @@ export class DatabaseInitializer {
             // Execute schema
             await db.query(schema);
             console.log('✅ Database schema initialized successfully');
+            // Populate blacklist data
+            await this.populateBlacklist();
+            console.log('✅ Database blacklist populated successfully');
             // Check if we need to enable extensions
             await this.ensureExtensions();
         }
@@ -41,6 +44,33 @@ export class DatabaseInitializer {
         catch (error) {
             console.warn('⚠️  Some extensions could not be enabled:', error);
             console.warn('   This may affect fuzzy search performance');
+        }
+    }
+    /**
+     * Populate the daily blacklist tags
+     */
+    async populateBlacklist() {
+        console.log('📋 Populating blacklist data...');
+        try {
+            // Try to load the real blacklist file first (not committed to repo)
+            let blacklistPath = path.join(__dirname, '../../populate_blacklist.sql');
+            let blacklistData;
+            try {
+                blacklistData = await fs.readFile(blacklistPath, 'utf-8');
+                console.log('✅ Loaded custom blacklist data');
+            }
+            catch {
+                // Fall back to example file
+                blacklistPath = path.join(__dirname, '../../populate_blacklist_example.sql');
+                blacklistData = await fs.readFile(blacklistPath, 'utf-8');
+                console.log('📝 Loaded example blacklist data (add populate_blacklist.sql for custom data)');
+            }
+            // Execute blacklist population
+            await db.query(blacklistData);
+        }
+        catch (error) {
+            console.warn('⚠️  Could not populate blacklist data:', error);
+            console.warn('   This may be normal if the files don\'t exist');
         }
     }
     /**

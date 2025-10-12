@@ -13,7 +13,7 @@
 ## OwO what's this?
 
 e621_guessr is a game which tests your knowledge of furry art tags. 
-high scores are awarded to interesting, rare, and contextually important tags.
+high scores are awarded to the most interesting tags.
 
 if you don't know what e621 is.. forget you ever saw this.
 
@@ -99,9 +99,8 @@ npm run dev
 
 ![Scoring System Visualization](img/e621_guessr_scoring_10.10.jpg)
 
-tags are scored based on a rarity, relevance, and context:
+tags are scored based on rarity sweet spots:
 - tag categories have their own minimum scores and weighted curves
-- each category has a rarity sweet spot
 - contextual multiplier system aims to dampen and boost general tags based on patterns (tags pertaining to color for instance)
 
 ## roadmap

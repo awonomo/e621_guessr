@@ -635,7 +635,7 @@ export const gameActions = {
       const playerId = getOrCreatePlayerId();
       
       // Check if player has already completed today's challenge
-      const statusUrl = `/api/daily/${today}/status?player_name=${encodeURIComponent(playerId)}`;
+      const statusUrl = `${backendApi.baseUrl}/api/daily/${today}/status?player_name=${encodeURIComponent(playerId)}`;
       const statusResponse = await fetch(statusUrl);
       
       if (statusResponse.ok) {
@@ -645,7 +645,7 @@ export const gameActions = {
           // Use challenge data from status response if available, otherwise fetch separately
           let challengeData = statusData.challenge;
           if (!challengeData) {
-            const challengeResponse = await fetch(`/api/daily/${today}`);
+            const challengeResponse = await fetch(`${backendApi.baseUrl}/api/daily/${today}`);
             if (!challengeResponse.ok) {
               alert('Failed to load daily challenge data');
               return;
@@ -664,7 +664,7 @@ export const gameActions = {
       }
       
       // Load the daily challenge posts
-      const response = await fetch(`/api/daily/${today}`);
+      const response = await fetch(`${backendApi.baseUrl}/api/daily/${today}`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -795,7 +795,7 @@ export const gameActions = {
         }))
       };
 
-      const response = await fetch(`/api/daily/${today}/submit`, {
+      const response = await fetch(`${backendApi.baseUrl}/api/daily/${today}/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
