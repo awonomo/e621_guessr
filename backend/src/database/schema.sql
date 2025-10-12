@@ -78,20 +78,20 @@ CREATE TABLE IF NOT EXISTS correct_guesses (
     guessed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- User statistics table (for future user accounts)
-CREATE TABLE IF NOT EXISTS user_stats (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    session_identifier VARCHAR(255) UNIQUE, -- For anonymous tracking
-    games_played INTEGER DEFAULT 0,
-    total_score BIGINT DEFAULT 0,
-    best_score INTEGER DEFAULT 0,
-    total_tags_guessed INTEGER DEFAULT 0,
-    favorite_categories JSONB DEFAULT '[]',
-    daily_challenges_completed INTEGER DEFAULT 0,
-    achievements JSONB DEFAULT '[]',
-    last_played TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- User statistics table (disabled - using local storage for stats)
+-- CREATE TABLE IF NOT EXISTS user_stats (
+--     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+--     session_identifier VARCHAR(255) UNIQUE, -- For anonymous tracking
+--     games_played INTEGER DEFAULT 0,
+--     total_score BIGINT DEFAULT 0,
+--     best_score INTEGER DEFAULT 0,
+--     total_tags_guessed INTEGER DEFAULT 0,
+--     favorite_categories JSONB DEFAULT '[]',
+--     daily_challenges_completed INTEGER DEFAULT 0,
+--     achievements JSONB DEFAULT '[]',
+--     last_played TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- );
 
 -- Daily challenges table
 CREATE TABLE IF NOT EXISTS daily_challenges (
@@ -118,17 +118,17 @@ CREATE INDEX IF NOT EXISTS idx_daily_challenges_date ON daily_challenges(date);
 CREATE INDEX IF NOT EXISTS idx_daily_results_date ON daily_results(date);
 CREATE INDEX IF NOT EXISTS idx_daily_results_score ON daily_results(date, score DESC);
 
--- Leaderboards table
-CREATE TABLE IF NOT EXISTS leaderboard_entries (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    session_id UUID NOT NULL REFERENCES game_sessions(id) ON DELETE CASCADE,
-    player_identifier VARCHAR(255),
-    score INTEGER NOT NULL,
-    game_mode VARCHAR(50) NOT NULL,
-    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_daily_challenge BOOLEAN DEFAULT FALSE,
-    daily_challenge_date DATE
-);
+-- Leaderboards table (disabled - using local storage for stats)
+-- CREATE TABLE IF NOT EXISTS leaderboard_entries (
+--     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+--     session_id UUID NOT NULL REFERENCES game_sessions(id) ON DELETE CASCADE,
+--     player_identifier VARCHAR(255),
+--     score INTEGER NOT NULL,
+--     game_mode VARCHAR(50) NOT NULL,
+--     completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     is_daily_challenge BOOLEAN DEFAULT FALSE,
+--     daily_challenge_date DATE
+-- );
 
 -- Tag data refresh log
 CREATE TABLE IF NOT EXISTS tag_refresh_log (
@@ -162,8 +162,9 @@ CREATE INDEX IF NOT EXISTS idx_rounds_post_id ON game_rounds(post_id);
 CREATE INDEX IF NOT EXISTS idx_guesses_round ON correct_guesses(round_id);
 CREATE INDEX IF NOT EXISTS idx_guesses_tag ON correct_guesses(tag_name);
 
-CREATE INDEX IF NOT EXISTS idx_leaderboard_mode_score ON leaderboard_entries(game_mode, score DESC);
-CREATE INDEX IF NOT EXISTS idx_leaderboard_daily ON leaderboard_entries(is_daily_challenge, daily_challenge_date, score DESC);
+-- Leaderboard indexes (disabled - using local storage for stats)
+-- CREATE INDEX IF NOT EXISTS idx_leaderboard_mode_score ON leaderboard_entries(game_mode, score DESC);
+-- CREATE INDEX IF NOT EXISTS idx_leaderboard_daily ON leaderboard_entries(is_daily_challenge, daily_challenge_date, score DESC);
 
 -- Views for common queries
 CREATE OR REPLACE VIEW tag_statistics AS
@@ -176,13 +177,14 @@ SELECT
 FROM tags 
 GROUP BY category;
 
-CREATE OR REPLACE VIEW daily_leaderboard AS
-SELECT 
-    daily_challenge_date,
-    player_identifier,
-    score,
-    completed_at,
-    ROW_NUMBER() OVER (PARTITION BY daily_challenge_date ORDER BY score DESC, completed_at ASC) as rank
-FROM leaderboard_entries 
-WHERE is_daily_challenge = true
-ORDER BY daily_challenge_date DESC, score DESC;
+-- Daily leaderboard view (disabled - using local storage for stats)
+-- CREATE OR REPLACE VIEW daily_leaderboard AS
+-- SELECT 
+--     daily_challenge_date,
+--     player_identifier,
+--     score,
+--     completed_at,
+--     ROW_NUMBER() OVER (PARTITION BY daily_challenge_date ORDER BY score DESC, completed_at ASC) as rank
+-- FROM leaderboard_entries 
+-- WHERE is_daily_challenge = true
+-- ORDER BY daily_challenge_date DESC, score DESC;

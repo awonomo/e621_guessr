@@ -4,7 +4,13 @@ import { Request, Response, NextFunction } from 'express';
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
-const MAX_REQUESTS = 100; // Max requests per window
+const MAX_REQUESTS = process.env.NODE_ENV === 'production' ? 100 : 500; // Higher limit for development
+
+// Export function to clear rate limits (for debugging)
+export const clearRateLimits = () => {
+  requestCounts.clear();
+  console.log('Rate limits cleared');
+};
 
 export const rateLimitMiddleware = (
   req: Request, 

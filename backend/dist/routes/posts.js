@@ -14,7 +14,7 @@ const postsQuerySchema = z.object({
 });
 // E621 API configuration
 const E621_BASE_URL = 'https://e621.net';
-const USER_AGENT = 'e6 Tag Challenge/2.0 (by awonomo)';
+const USER_AGENT = 'e621_guesst/2.0 (by awonomo)';
 // Helper function to build E621 query
 function buildE621Query(params) {
     const tags = [];
@@ -65,7 +65,19 @@ function buildE621Query(params) {
     if (params.customCriteria?.trim()) {
         // Split custom criteria by spaces and add each as separate tag
         const customTags = params.customCriteria.trim().split(/\s+/);
-        tags.push(...customTags);
+        // Filter out post ID patterns (id:number or just numbers) and system parameters
+        const filteredTags = customTags.filter(tag => {
+            // Block patterns like "id:123", "id:123456", or standalone numbers
+            if (/^id:\d+$/.test(tag) || /^\d+$/.test(tag)) {
+                return false;
+            }
+            // Block system parameters that could break the game
+            if (/^limit:/i.test(tag) || /^tagcount:/i.test(tag)) {
+                return false;
+            }
+            return true;
+        });
+        tags.push(...filteredTags);
     }
     // User provided tags
     if (params.tags?.trim()) {
@@ -114,7 +126,7 @@ router.get('/', async (req, res, next) => {
                 post.file?.url; // Ensure file exists
         });
         if (filteredPosts.length === 0) {
-            throw createError('No suitable posts found for these criteria. Try different settings.', 404);
+            throw createError('Not enough posts found for these tags.', 404);
         }
         console.log(`✅ Found ${filteredPosts.length} posts`);
         // Log post URLs for debugging
@@ -139,6 +151,10 @@ router.get('/', async (req, res, next) => {
 });
 // GET /api/posts/:id - Get specific post details
 router.get('/:id', async (req, res, next) => {
+    // Only allow in development - not currently used by frontend
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(404).json({ error: 'Not found' });
+    }
     try {
         const postId = parseInt(req.params.id);
         if (isNaN(postId)) {

@@ -6,8 +6,6 @@
   import BestTagDisplay from '../components/BestTagDisplay.svelte';
   import RoundBreakdown from '../components/RoundBreakdown.svelte';
   
-  let scrollContainer: HTMLElement;
-  
   // Calculate game statistics
   $: totalScore = $currentSession?.totalScore || 0;
   $: isNewBest = totalScore > 0 && totalScore > ($userStats?.bestScore || 0);
@@ -46,6 +44,7 @@
   
   onMount(() => {
     document.addEventListener('keydown', handleKeydown);
+  
     
     // Auto-submit daily challenge results
     if ($currentSession && isDailyChallenge) {
@@ -61,24 +60,15 @@
 <div class="game-summary-screen">
   <!-- Static Top Bar -->
   <div class="top-bar">
-    {#if !isDailyChallenge}
       <button class="icon-button home-button" on:click={returnHome} title="Return Home">
-        🏠
+        ✕
       </button>
-    {:else}
-      <div></div> <!-- Spacer for daily challenge -->
-    {/if}
-    
-    <!-- <button class="icon-button share-button" on:click={shareResults} title="Share Results">
-      📤
-    </button> -->
+      <h1 class="logo-header">e621_guessr</h1>
+    <div class="flex-spacer" style="flex:1"></div>
+    <button class="icon-button" on:click={playAgain} title="Play Again">
+      ↻
+    </button>
   </div>
-
-  <!-- Scrollable Content Container -->
-  <div 
-    class="content-container"
-    bind:this={scrollContainer}
-  >
     <!-- Page 0: Game Summary -->
     <div class="summary-page">
       <div class="summary-content">
@@ -98,7 +88,8 @@
           <div class="new-best-badge">New Best!</div>
         {/if}
         
-        <div class="total-score">{totalScore.toLocaleString()}</div>
+              <h1 class="game-title">GAME:</h1>
+        <div class="score-heading glowing">{totalScore.toLocaleString()}</div>
         
         {#if bestTag}
           <BestTagDisplay 
@@ -107,25 +98,22 @@
             points={bestTag.points}
           />
         {/if}
-        
-        <div class="stats-summary">
-          <span class="tags-count">{guessedTags}/{totalTags} tags</span>
-        </div>
-        
+         
         <div class="action-buttons">
           {#if isDailyChallenge}
             <button class="play-again-button daily" on:click={returnHome}>
-              Return Home
+              home
             </button>
           {:else}
             <button class="play-again-button" on:click={playAgain} title="Play Again">
               again
             </button>
           {/if}
+          <button class="share-button" title="share score" on:click={shareResults}>share</button>
         </div>
         
         <div class="scroll-prompt" class:visible={rounds.length > 0}>
-          <span>round breakdown</span>
+          <span>{guessedTags}/{totalTags} tags guessed</span>
           <div class="arrow">⌄</div>
         </div>
       </div>
@@ -133,10 +121,14 @@
 
     <!-- Round Breakdown Pages -->
     {#each rounds as round, index}
-      <div class="round-breakdown-score"><h1 class="round-title">ROUND {index + 1}:</h1><p> {round.score.toLocaleString()} pts.</p></div>
-      <RoundBreakdown roundData={round} roundNumber={index + 1} />
+      <div class="round-breakdown-header">
+        <h1 class="round-title">ROUND {index + 1}:</h1>
+        <p class="round-score-text">{round.score.toLocaleString()} pts.</p>
+      </div>
+      <div class="breakdown-page">
+        <RoundBreakdown roundData={round} roundNumber={index + 1} />
+      </div>
     {/each}
-  </div>
 </div>
 
 <style>
@@ -151,10 +143,12 @@
   
   /* Static Elements */
   .top-bar {
-    display: flex;
+   display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1rem 2rem;
+    z-index: 100;
+    flex-shrink: 0;
     position: fixed;
     top: 0;
     left: 0;
@@ -164,27 +158,14 @@
     border-bottom: 1px solid var(--bg-secondary);
   }
   
-  /* Button Styles */
-  .icon-button {
-    background: var(--bg-secondary);
-    border: 2px solid var(--accent-primary);
-    border-radius: 50%;
-    width: 3rem;
-    height: 3rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.3s ease;
+ 
+  .logo-header {
+    padding-left: 3rem;
+    text-align: left;
+    margin: 0;
   }
   
-  .icon-button:hover {
-    background: var(--accent-primary);
-    color: var(--bg-primary);
-    transform: scale(1.05);
-  }
+
   
   /* Scrollable Content */
   .content-container {
@@ -192,22 +173,38 @@
     height: calc(100vh - 4rem);
     overflow-y: auto;
     scroll-behavior: smooth;
-    /* Removed mandatory scroll snapping to prevent erratic jumping */
   }
   
   .summary-page {
-    min-height: 100%;
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 2rem;
-  }
-  
-  /* Summary Content */
+    width: 100%;
+    background: var(--bg-primary);
+  }  /* Summary Content */
   .summary-content {
     text-align: center;
     max-width: 600px;
     width: 100%;
+  }
+
+    .game-breakdown-section {
+    width: 100%;
+  }
+
+  .breakdown-page {
+    width: 100%;
+    background: var(--bg-primary);
+    padding: 2rem 0;
+    padding-bottom: 8rem;
+  }
+
+  .round-breakdown-header {
+    text-align: center;
+    padding: 4rem 0 0 0;
+    border-top: 2px dotted var(--bg-secondary);
   }
   
   .new-best-badge {
@@ -243,21 +240,12 @@
     letter-spacing: 0.05em;
   }
   
-  .total-score {
-    font-size: 8rem;
-    font-weight: 900;
-    color: var(--text-accent);
-    margin-bottom: 2rem;
-    text-shadow: 0 2px 8px rgba(252, 179, 66, 0.3);
-    font-variant-numeric: tabular-nums;
-  }
 
-   .round-breakdown-score {
-    border-top: 2px dotted var(--bg-secondary);
-    text-align: center;
-    padding-top: 9vw;
-    margin-top: 3rem;
+  .score-heading.glowing {
+    animation: glow 2s ease-in-out infinite;
+    text-shadow: 0 0 20px rgba(252, 179, 66, 0.5);
   }
+  
 
   .round-title {
     display: inline-block;
@@ -267,9 +255,10 @@
     text-transform: uppercase;
     letter-spacing: 0.1em;
     margin: 0;
+    text-shadow: 0 2px 8px rgba(252, 179, 66, 0.3);
   }
 
-  .round-breakdown-score p {
+  .round-score-text {
     display: inline-block;
     font-style: italic;
     font-size: 2.5rem;
@@ -286,22 +275,30 @@
   }
   
   .action-buttons {
-    margin-bottom: 4rem;
+    margin-bottom: 2rem;
   }
-  
-  .play-again-button {
-    background: var(--bg-light);
-    color: var(--text-dark);
+
+  .action-buttons button {
+    margin: 1rem;
+    font-size: 2rem;
+      color: var(--text-dark);
     border: none;
     padding: 1rem 3rem;
-    font-size: 1.25rem;
     font-weight: 700;
     border-radius: 25px;
     cursor: pointer;
     transition: all 0.3s ease;
   }
   
-  .play-again-button:hover {
+  .play-again-button {
+    background: var(--bg-light);
+  }
+
+.share-button {
+  background: var(--bg-light);
+}
+  
+  .action-buttons button:hover {
     transform: scale(1.05);
   }
   
@@ -328,16 +325,16 @@
   
   .arrow {
     font-size: 2rem;
-    animation: bounce 2s infinite;
+    animation: bounce 2s;
   }
   
   /* Animations */
-  @keyframes glow {
+ @keyframes glow {
     0%, 100% {
-      box-shadow: 0 0 20px rgba(252, 179, 66, 0.3);
+      text-shadow: 0 0 20px rgba(252, 179, 66, 0.1);
     }
     50% {
-      box-shadow: 0 0 30px rgba(252, 179, 66, 0.6);
+      text-shadow: 0 0 30px rgba(252, 179, 66, 0.3);
     }
   }
   
@@ -355,8 +352,17 @@
   
   /* Responsive Design */
   @media (max-width: 768px) {
-    .total-score {
+    .score-heading {
       font-size: 3.5rem;
+    }
+    
+    .score-heading.glowing {
+      text-shadow: 
+        0 0 8px rgba(252, 179, 66, 0.8),
+        0 0 15px rgba(252, 179, 66, 0.6),
+        0 0 25px rgba(252, 179, 66, 0.4),
+        0 2px 6px rgba(252, 179, 66, 0.3);
+      transform: scale(1.03);
     }
     
     .stats-summary {
@@ -367,5 +373,13 @@
       padding: 0.875rem 2rem;
       font-size: 1.125rem;
     }
+  }  
+  .game-title {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--text-secondary);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
   }
 </style>

@@ -62,7 +62,8 @@
     <button class="icon-button quit-button" onclick={quitGame} title="Quit Game">
       ✕
     </button>
-    
+    <h1 class="logo-header">e621_guessr</h1>
+    <div style="flex:1"></div>
     {#if $currentSession?.settings.mode !== 'endless'}
       <div class="timer-container timer-container-mobile">
         <Timer 
@@ -72,7 +73,6 @@
         />
       </div>
     {/if}
-    
     <button class="icon-button skip-button" onclick={skipRound} title="Skip Round">
       ⏭
     </button>
@@ -80,7 +80,8 @@
 
   <!-- Main Game Area -->
   <div class="game-grid">
-    <!-- Score Display Area (Mobile Only) -->
+
+    <!-- Score Display Area -->
     <div class="score-display-area">
       <ScoreDisplay score={$currentRound?.score || 0} />
     </div>
@@ -98,6 +99,8 @@
         </div>
       {/if}
     </div>
+
+    <h2 class="round-title">Round {($currentSession?.currentRound || 0) + 1}</h2>
 
     <!-- Scoreboard Area -->
     <div class="tag-list">
@@ -157,6 +160,17 @@
     z-index: 100;
     flex-shrink: 0;
   }
+
+  .logo-header {
+    padding-left: 3rem;
+    text-align: left;
+    font-variant: italic;
+    font-size: 2rem;
+    font-weight: 200;
+    letter-spacing: 0.1em;
+    color: var(--text-accent);
+    margin: 0;
+  }
   
   .timer-container {
     display: flex;
@@ -206,7 +220,7 @@
   .game-grid {
     display: grid;
     grid-template-columns: 4fr 1fr;
-    grid-template-rows: 1fr 5fr auto auto;
+    grid-template-rows: 0.5fr 1fr 5fr auto auto;
     gap: 1rem;
     flex: 1;
     padding: 0 2rem 0rem 2rem;
@@ -214,9 +228,22 @@
     overflow: hidden;
     box-sizing: border-box;
   }
+
+  .round-title {
+    grid-column: 2;
+    grid-row: 1;
+    padding-top: 1.5rem;
+    padding-bottom: 1rem;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 300;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--bg-secondary);
+  }
   
   .guess-input-area {
-    grid-row: 4;
+    grid-row: 5;
     grid-column: 1;
     display: flex;
     align-items: center;
@@ -226,13 +253,13 @@
   }
   
   .score-display-area {
-    grid-row: 1;
+    grid-row: 2;
     grid-column: 2; 
   }
   
   .post-area {
     grid-column: 1;
-    grid-row: 1 / 4;
+    grid-row: 1 / 5;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -256,7 +283,7 @@
   
   .tag-list {
     grid-column: 2;
-    grid-row: 2 / 3;
+    grid-row: 3 / 4;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -266,11 +293,15 @@
   }
   
   .tag-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 1rem;
     grid-column: 2;
-    grid-row: 3;
+    grid-row: 4;
     text-align: center;
     border-top: 1px solid var(--bg-secondary);
+    height: 100%;
   }
   
   .progress-text {
@@ -281,7 +312,7 @@
 
   .timer-container-desktop {
     grid-column: 2;
-    grid-row: 4;
+    grid-row: 5;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -301,24 +332,44 @@
     .gameplay-screen {
       position: relative;
     }
+
+    #logoHeader {
+      display: none;
+    }
     
     .game-grid {
       grid-template-columns: 1fr 1fr 1fr;
-      grid-template-rows: auto 1fr 5fr 0.5fr;
+      grid-template-rows: auto 5fr 1fr 0.5fr;
       padding: 0 1rem 1rem 1rem;
     }
 
+    .top-bar {
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--bg-secondary);
+    }
+
     .score-display-area {
-      grid-column: 2;
+      grid-column: 2 / 4;
       grid-row: 1;
-      display: block;
-      padding: 0 0;
-      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+
+    .round-title {
+      grid-column: 1;
+      border-bottom: 0px;
+      font-size: 1.25rem;
+    }
+
+    .progress-text {
+      display:none
     }
 
     .post-area {
       grid-column: 1 / 4;
-      grid-row: 3;
+      grid-row: 2;
     }
 
     .guess-input-area {
@@ -337,7 +388,7 @@
     
     .tag-list {
       grid-column: 1 / 4;
-      grid-row: 2;
+      grid-row: 3;
       order: 2;
       flex-direction: row;
       padding: 0;

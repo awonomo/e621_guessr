@@ -23,23 +23,31 @@
       <button class="close-button" onclick={onClose}>×</button>
     </div>
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-number">{$userStats.gamesPlayed}</div>
+      <div class="stat-card" id="games-played-card">
+        <div class="stat-number">{$userStats.gamesPlayed.toLocaleString()}</div>
         <div class="stat-label">Games Played</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-number">{$userStats.bestScore}</div>
+      <div class="stat-card" id="best-score-card">
+        <div class="stat-number">{$userStats.bestScore.toLocaleString()}</div>
         <div class="stat-label">Best Score</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-number">{Math.round($userStats.averageScore)}</div>
+      <div class="stat-card" id="average-score-card">
+        <div class="stat-number">{Math.round($userStats.averageScore).toLocaleString()}</div>
         <div class="stat-label">Average Score</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-number">{$userStats.totalTagsGuessed}</div>
+      <div class="stat-card" id="tags-found-card">
+        <div class="stat-number">{$userStats.totalTagsGuessed.toLocaleString()}</div>
         <div class="stat-label">Tags Found</div>
       </div>
-      {#if $userStats.bestTag}
+      <div class="stat-card" id="daily-challenges-card">
+        <div class="stat-number">{$userStats.dailyChallengesCompleted.toLocaleString()}</div>
+        <div class="stat-label">Daily Challenges</div>
+      </div>
+
+          
+    <!-- Best Tag Card on its own row -->
+    {#if $userStats.bestTag}
+      <div class="best-tag-section">
         <div class="stat-card best-tag-card">
           <BestTagDisplay 
             tag={$userStats.bestTag.tag}
@@ -47,17 +55,17 @@
             points={$userStats.bestTag.score}
           />
         </div>
-      {:else}
+      </div>
+    {:else}
+      <div class="best-tag-section">
         <div class="stat-card">
           <div class="stat-number">—</div>
           <div class="stat-label">Best Tag</div>
         </div>
-      {/if}
-      <div class="stat-card">
-        <div class="stat-number">{$userStats.dailyChallengesCompleted}</div>
-        <div class="stat-label">Daily Challenges</div>
       </div>
+    {/if}
     </div>
+
   </div>
 </div>
 
@@ -98,14 +106,20 @@
     padding: 0;
     line-height: 1;
   }
+
   .close-button:hover {
     color: var(--text-primary);
   }
+
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
     gap: 1rem;
+    margin-bottom: 1.5rem;
   }
+
+  
   .stat-card {
     background: var(--bg-primary);
     padding: 1.5rem;
@@ -122,7 +136,38 @@
     color: var(--text-secondary);
     font-size: 0.875rem;
   }
+
+  #games-played-card {
+    grid-column: 1;
+    grid-row: 4;
+  }
+
+  #average-score-card {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  #best-score-card {
+    grid-column: 1 / 3;
+    grid-row: 1;
+  }
+
+  #tags-found-card {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  #daily-challenges-card {
+    grid-column: 2;
+    grid-row: 4;
+  }
+
+  .best-tag-section {
+    grid-column: 1 / 3;
+  }
+
   .best-tag-card {
+    grid-row: 2;
     display: flex;
     align-items: center;
     justify-content: center;

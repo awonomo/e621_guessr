@@ -81,11 +81,18 @@
     text-align: center;
     margin-bottom: 3rem;
   }
-  
+
+  .logo-header {
+  text-align: center;
+  margin: 2rem 0;
+}
+
   .logo-header h1 {
-    color: var(--text-accent);
-    margin-bottom: 0.5rem;
-  }
+  margin: 0;
+  margin-bottom: 0.5rem;
+  color: var(--text-accent);
+  font-weight: 200;
+}
   
   .menu {
     width: 100%;
@@ -114,6 +121,8 @@
     transform: translateY(-2px);
     box-shadow: var(--shadow-heavy);
   }
+
+
   
   .daily-button {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

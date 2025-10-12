@@ -278,7 +278,7 @@ export class ScoringService {
       
       const response = await fetch(searchUrl, {
         headers: {
-          'User-Agent': 'TagChallenge/1.0 (by your_username_here)'  // Required by e621 API
+          'User-Agent': 'e621Guessr/1.0 (https://github.com/awonomo/e621_guessr)'  // Required by e621 API
         }
       });
       

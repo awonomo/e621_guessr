@@ -4,7 +4,7 @@
   import type { GameSettings, Rating } from '../lib/types';
   
   // Settings persistence key
-  const SETTINGS_KEY = 'e6TagChallenge_setupSettings';
+  const SETTINGS_KEY = 'e621Guessr_setupSettings';
 
   // Default settings
   const defaultSettings = {

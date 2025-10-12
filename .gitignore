@@ -9,6 +9,9 @@ yarn-error.log*
 .env.*
 !.env.example
 
+# Database files with sensitive content
+backend/populate_blacklist.sql
+
 # Logs
 logs
 *.log

@@ -21,7 +21,6 @@ function getOrCreatePlayerId(): string {
   if (!playerId) {
     playerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     localStorage.setItem('playerId', playerId);
-    console.log('[GameStore] Created new player ID:', playerId);
   }
   return playerId;
 }
@@ -636,25 +635,32 @@ export const gameActions = {
       const playerId = getOrCreatePlayerId();
       
       // Check if player has already completed today's challenge
-      const statusResponse = await fetch(`/api/daily/${today}/status?player_name=${encodeURIComponent(playerId)}`);
+      const statusUrl = `/api/daily/${today}/status?player_name=${encodeURIComponent(playerId)}`;
+      const statusResponse = await fetch(statusUrl);
+      
       if (statusResponse.ok) {
         const statusData = await statusResponse.json();
+        
         if (statusData.completed) {
-          console.log('[GameStore] Player has already completed daily challenge, showing results');
-          
-          // Get the daily challenge data to reconstruct the session
-          const challengeResponse = await fetch(`/api/daily/${today}`);
-          if (!challengeResponse.ok) {
-            alert('Failed to load daily challenge data');
-            return;
+          // Use challenge data from status response if available, otherwise fetch separately
+          let challengeData = statusData.challenge;
+          if (!challengeData) {
+            const challengeResponse = await fetch(`/api/daily/${today}`);
+            if (!challengeResponse.ok) {
+              alert('Failed to load daily challenge data');
+              return;
+            }
+            challengeData = await challengeResponse.json();
           }
-          
-          const challengeData = await challengeResponse.json();
           
           // Reconstruct the completed game session
           await this.showCompletedDailyChallenge(challengeData, statusData.result);
           return;
+        } else {
+          // Player has not completed daily challenge yet, starting new game
         }
+      } else {
+        // Status check failed or player not found, starting new daily challenge
       }
       
       // Load the daily challenge posts
@@ -705,8 +711,6 @@ export const gameActions = {
   },
 
   async showCompletedDailyChallenge(challengeData: any, resultData: any) {
-    console.log('[GameStore] Reconstructing completed daily challenge session');
-    
     // Create game settings from daily challenge config
     const gameSettings: GameSettings = {
       mode: 'daily',
@@ -777,29 +781,31 @@ export const gameActions = {
       const cstTime = new Date(now.getTime() + (cstOffset * 60 * 60 * 1000));
       const today = cstTime.toISOString().split('T')[0]; // YYYY-MM-DD format
 
+      const submissionData = {
+        player_name: playerId,
+        score: session.totalScore,
+        rounds: session.rounds.map(round => ({
+          score: round.score,
+          totalGuesses: round.totalGuesses,
+          incorrectGuesses: round.incorrectGuesses,
+          correctGuesses: round.correctGuesses,
+          startedAt: round.startedAt.toISOString(),
+          endedAt: round.endedAt?.toISOString() || new Date().toISOString(),
+          pauseCount: round.pauseCount
+        }))
+      };
+
       const response = await fetch(`/api/daily/${today}/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          player_name: playerId,
-          score: session.totalScore,
-          rounds: session.rounds.map(round => ({
-            score: round.score,
-            totalGuesses: round.totalGuesses,
-            incorrectGuesses: round.incorrectGuesses,
-            correctGuesses: round.correctGuesses,
-            startedAt: round.startedAt.toISOString(),
-            endedAt: round.endedAt?.toISOString() || new Date().toISOString(),
-            pauseCount: round.pauseCount
-          }))
-        })
+        body: JSON.stringify(submissionData)
       });
 
       if (response.ok) {
         const data = await response.json();
-        console.log('[GameStore] Daily challenge result submitted successfully:', data);
+        // Daily challenge result submitted successfully
       } else {
         const errorData = await response.json();
         if (response.status === 409) {
@@ -807,6 +813,9 @@ export const gameActions = {
           console.log('[GameStore] Daily challenge already submitted');
         } else {
           console.error('[GameStore] Failed to submit daily challenge result:', errorData);
+          if (errorData.details) {
+            console.error('[GameStore] Validation error details:', errorData.details);
+          }
         }
       }
     } catch (error) {
@@ -909,11 +918,20 @@ function updateUserStats(state: AppState, session: GameSession) {
     stats.bestScore = session.totalScore;
   }
 
-  // Calculate accuracy
-  const totalGuesses = session.rounds.reduce((sum, round) => sum + round.totalGuesses, 0);
-  const correctGuesses = session.rounds.reduce((sum, round) => {
+  // Increment daily challenges completed if this was a daily challenge
+  if (session.settings.mode === 'daily') {
+    stats.dailyChallengesCompleted++;
+  }
+
+  // Add total tags guessed from this session
+  const sessionTagsGuessed = session.rounds.reduce((sum, round) => {
     return sum + Object.values(round.correctGuesses).flat().length;
   }, 0);
+  stats.totalTagsGuessed += sessionTagsGuessed;
+
+  // Calculate accuracy
+  const totalGuesses = session.rounds.reduce((sum, round) => sum + round.totalGuesses, 0);
+  const correctGuesses = sessionTagsGuessed;
   
   if (totalGuesses > 0) {
     const sessionAccuracy = correctGuesses / totalGuesses;
@@ -925,12 +943,11 @@ function updateUserStats(state: AppState, session: GameSession) {
 export function saveToStorage() {
   try {
     const playerId = getOrCreatePlayerId();
-    appState.subscribe(state => {
-      localStorage.setItem(`gameState_${playerId}`, JSON.stringify({
-        userStats: state.userStats,
-        settings: state.settings
-      }));
-    });
+    const state = get(appState);
+    localStorage.setItem(`gameState_${playerId}`, JSON.stringify({
+      userStats: state.userStats,
+      settings: state.settings
+    }));
   } catch (error) {
     console.warn('Failed to save game state:', error);
   }
@@ -967,4 +984,19 @@ function saveSettingsToStorage() {
 // Initialize from storage on startup
 if (typeof window !== 'undefined') {
   loadFromStorage();
+  
+  // Set up automatic persistence when userStats change
+  let lastSavedStats: string | null = null;
+  userStats.subscribe((stats) => {
+    const statsString = JSON.stringify(stats);
+    if (statsString !== lastSavedStats) {
+      lastSavedStats = statsString;
+      saveToStorage();
+    }
+  });
+
+  // Save stats when page is about to unload
+  window.addEventListener('beforeunload', () => {
+    saveToStorage();
+  });
 }

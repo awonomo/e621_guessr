@@ -28,7 +28,7 @@ export const config: DatabaseConfig = {
   database: {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432'),
-    database: process.env.DB_NAME || 'tag_challenge',
+    database: process.env.DB_NAME || 'e621_guessr',
     user: process.env.DB_USER || process.env.USER || 'postgres',
     password: process.env.DB_PASSWORD || '',
     // Add connection options for better compatibility

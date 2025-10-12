@@ -1,21 +1,21 @@
 import { Router } from 'express';
 import ScoringService from '../services/ScoringService.js';
+import { 
+  validateBody,
+  scoringGuessSchema,
+  bulkScoringSchema 
+} from '../middleware/validation.js';
 
 const router = Router();
 
 /**
  * Score a single tag guess (main endpoint)
  */
-router.post('/score', async (req, res) => {
+router.post('/score', validateBody(scoringGuessSchema), async (req, res) => {
   try {
     const { guess } = req.body;
     
-    if (!guess || typeof guess !== 'string') {
-      return res.status(400).json({ 
-        error: 'Invalid request',
-        message: 'Guess must be a non-empty string'
-      });
-    }
+    // Validation is handled by middleware now
     
     const result = await ScoringService.scoreTag(guess);
     res.json(result);
@@ -31,27 +31,14 @@ router.post('/score', async (req, res) => {
 /**
  * Score multiple tags in bulk (for round breakdown)
  */
-router.post('/bulk', async (req, res) => {
+router.post('/bulk', validateBody(bulkScoringSchema), async (req, res) => {
   try {
     const { guesses } = req.body;
     
-    if (!Array.isArray(guesses) || guesses.length === 0) {
-      return res.status(400).json({ 
-        error: 'Invalid request',
-        message: 'Guesses must be a non-empty array of strings'
-      });
-    }
-
-    // Limit to prevent abuse
-    if (guesses.length > 2000) {
-      return res.status(400).json({ 
-        error: 'Too many guesses',
-        message: 'Maximum 2000 tags per bulk request'
-      });
-    }
+    // Validation is handled by middleware now
     
     const results = await Promise.all(
-      guesses.map(async (guess) => {
+      guesses.map(async (guess: string) => {
         try {
           return await ScoringService.scoreTag(guess);
         } catch (error) {
@@ -101,16 +88,16 @@ router.get('/health', async (req, res) => {
 /**
  * Debug endpoint to see detailed scoring breakdown
  */
-router.post('/debug-score', async (req, res) => {
+router.post('/debug-score', validateBody(scoringGuessSchema), async (req, res) => {
+  // Only allow in development
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  
   try {
     const { guess } = req.body;
     
-    if (!guess || typeof guess !== 'string') {
-      return res.status(400).json({ 
-        error: 'Invalid request',
-        message: 'Guess must be a non-empty string'
-      });
-    }
+    // Validation is handled by middleware now
     
     // Get the actual scoring result
     const result = await ScoringService.scoreTag(guess);

@@ -1,24 +1,23 @@
 # e621_guessr
 
-[![Svelte](https://img.shields.io/badge/Svelte-5-orange?logo=svelte)](https://svelte.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org)
-[![Vite](https://img.shields.io/badge/Vite-7.1-purple?logo=vite)](https://vitejs.dev)
-[![Node.js](https://img.shields.io/badge/Node.js-20-green?logo=node.js)](https://nodejs.org)
-[![Express](https://img.shields.io/badge/Express-4-black?logo=express)](https://expressjs.com)
-[![Plotly](https://img.shields.io/badge/Plotly-2.35-blue?logo=plotly)](https://plotly.com/javascript/)
-[![Runed](https://img.shields.io/badge/Runed-0.34-purple)](https://runed.dev)
+[![Svelte](https://img.shields.io/badge/-Svelte_5-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://svelte.dev)
+[![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Vite](https://img.shields.io/badge/-Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
+[![Node.js](https://img.shields.io/badge/-Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
+[![Express](https://img.shields.io/badge/-Express-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com)
+[![Plotly](https://img.shields.io/badge/-Plotly-3F4F75?style=for-the-badge&logo=plotly&logoColor=white)](https://plotly.com/javascript/)
+[![PostgreSQL](https://img.shields.io/badge/-PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![Zod](https://img.shields.io/badge/-Zod-3E67B1?style=for-the-badge&logo=zod&logoColor=white)](https://zod.dev/)
 
----
 
-## what is this?
+## OwO what's this?
 
 e621_guessr is a game which tests your knowledge of furry art tags. 
 high scores are awarded to interesting, rare, and contextually important tags.
 
 if you don't know what e621 is.. forget you ever saw this.
-you must be 18 years or older to play !
 
----
+** you must be 18 years or older to play ! **
 
 ## installation
 
@@ -78,8 +77,6 @@ npm run db:init      # Initialize database schema
 npm run tags:refresh # Download tag data from e621
 ```
 
----
-
 ## running locally
 
 ### start the backend (api server)
@@ -97,7 +94,6 @@ npm run dev
 - open your browser to [http://localhost:5173](http://localhost:5173)
 - the backend runs on [http://localhost:3001](http://localhost:3001)
 
----
 
 ## scoring system overview
 
@@ -107,10 +103,6 @@ tags are scored based on a rarity, relevance, and context:
 - tag categories have their own minimum scores and weighted curves
 - each category has a rarity sweet spot
 - contextual multiplier system aims to dampen and boost general tags based on patterns (tags pertaining to color for instance)
-
-
-
----
 
 ## roadmap
 - create more game modes

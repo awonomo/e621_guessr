@@ -1,7 +1,7 @@
 {
-  "name": "e6-tag-challenge-v2",
+  "name": "e621-guessr",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

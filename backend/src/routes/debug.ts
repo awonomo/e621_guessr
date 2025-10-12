@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { config } from '../config/database.js';
 import ScoringService from '../services/ScoringService.js';
 import db from '../database/connection.js';
+import { clearRateLimits } from '../middleware/rateLimit.js';
 
 const router = Router();
 
@@ -1116,6 +1117,15 @@ router.get('/visualization', (req, res) => {
   res.setHeader('Content-Type', 'text/html');
   res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.plot.ly; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: https:; font-src 'self' data: https:");
   res.send(html);
+});
+
+// Clear rate limits (for development/debugging)
+router.post('/clear-rate-limits', (req, res) => {
+  clearRateLimits();
+  res.json({ 
+    success: true, 
+    message: 'Rate limits cleared' 
+  });
 });
 
 function getCategoryName(category: number): string {

@@ -18,7 +18,7 @@ const postsQuerySchema = z.object({
 
 // E621 API configuration
 const E621_BASE_URL = 'https://e621.net';
-const USER_AGENT = 'e6 Tag Challenge/2.0 (by awonomo)';
+const USER_AGENT = 'e621_guesst/2.0 (by awonomo)';
 
 // Helper function to build E621 query
 function buildE621Query(params: PostsQuery): string {
@@ -181,6 +181,11 @@ router.get('/', async (req, res, next) => {
 
 // GET /api/posts/:id - Get specific post details
 router.get('/:id', async (req, res, next) => {
+  // Only allow in development - not currently used by frontend
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  
   try {
     const postId = parseInt(req.params.id);
     

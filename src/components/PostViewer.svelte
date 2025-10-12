@@ -162,6 +162,10 @@
     text-decoration: none;
     color: inherit;
     position: relative;
+    cursor: pointer;
+  }
+  .post-link .post-image {
+    cursor: pointer;
   }
   
   .post-id {

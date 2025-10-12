@@ -210,6 +210,7 @@
   .post-section {
     width: 100%;
     margin-bottom: 3rem;
+    cursor: pointer;
   }
   
   .tags-section {
@@ -240,10 +241,17 @@
   .tag-base {
     /* Override shared styles for breakdown grid layout */
     padding: 0.5rem 1rem;
-    margin-bottom: 0; /* Reset margin for grid layout */
+    margin-bottom: 0;
     font-size: 0.95rem;
-    animation: none; /* Disable slide-in animation */
+    animation: none; 
     background: var(--bg-secondary);
+  }
+
+  .tag-base:hover {
+    transform: scale(1.33);
+    color: var(--text-accent) !important;
+    border-color: var(--text-accent) !important;
+    box-shadow: 0px 0px 8px rgba(252, 179, 66, 0.5);
   }
   
   .tag-guessed {

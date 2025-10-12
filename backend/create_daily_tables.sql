@@ -30,7 +30,15 @@ CREATE TABLE daily_results (
     UNIQUE(date, player_name)
 );
 
+-- Daily blacklist tags table for content filtering
+CREATE TABLE daily_blacklist_tags (
+    id SERIAL PRIMARY KEY,
+    tag VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes
 CREATE INDEX idx_daily_challenges_date ON daily_challenges(date);
 CREATE INDEX idx_daily_results_date ON daily_results(date);
 CREATE INDEX idx_daily_results_score ON daily_results(date, score DESC);
+CREATE INDEX idx_daily_blacklist_tags_tag ON daily_blacklist_tags(tag);

@@ -64,7 +64,7 @@
 </script>
 
 <div class="score-display" class:glowing={isAnimating}>
-  <div class="score-label">Score</div>
+  <div class="score-label" class:hidden={!isDesktop}>Score</div>
   <div 
     class="score-number"
     style="font-size: {isDesktop ? fontSize : 3}rem;"
@@ -85,6 +85,9 @@
     text-transform: uppercase;
     letter-spacing: 0.1em;
     margin-bottom: 0.5rem;
+  }
+  .score-label.hidden {
+    display: none !important;
   }
   
   .score-number {

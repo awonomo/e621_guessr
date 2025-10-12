@@ -3,10 +3,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { postsRouter } from './routes/posts.js';
 import dailyRouter from './routes/daily.js';
-import { statsRouter } from './routes/stats.js';
 import scoringRouter from './routes/scoring.js';
 import tagsRouter from './routes/tags.js';
 import debugRouter from './routes/debug.js';
+import adminRouter from './routes/admin.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { rateLimitMiddleware } from './middleware/rateLimit.js';
 const app = express();
@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet());
 app.use(cors({
     origin: process.env.NODE_ENV === 'production'
-        ? ['https://yourdomain.com']
+        ? ['https://your-vercel-app.vercel.app'] // Replace with your actual Vercel URL
         : ['http://localhost:5173', 'http://localhost:5174'],
     credentials: true
 }));
@@ -35,10 +35,13 @@ app.get('/api/health', (req, res) => {
 // API routes
 app.use('/api/posts', postsRouter);
 app.use('/api/daily', dailyRouter);
-app.use('/api/stats', statsRouter);
 app.use('/api/scoring', scoringRouter);
 app.use('/api/tags', tagsRouter);
-app.use('/api/debug', debugRouter);
+app.use('/api/admin', adminRouter);
+// Debug routes only in development
+if (process.env.NODE_ENV !== 'production') {
+    app.use('/api/debug', debugRouter);
+}
 // 404 handler
 app.use('*', (req, res) => {
     res.status(404).json({
@@ -50,14 +53,12 @@ app.use('*', (req, res) => {
 app.use(errorHandler);
 // Start server
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-    console.log(`🎮 Posts API: http://localhost:${PORT}/api/posts`);
-    console.log(`📅 Daily API: http://localhost:${PORT}/api/daily`);
-    console.log(`🏆 Scoring API: http://localhost:${PORT}/api/scoring`);
-    console.log(`🏷️  Tags API: http://localhost:${PORT}/api/tags`);
-    console.log(`🔍 Debug API: http://localhost:${PORT}/api/debug/scoring-curves`);
-    console.log(`Scoring Visualization: http://localhost:${PORT}/api/debug/visualization`);
+    console.log(`🐰 Server running on http://localhost:${PORT}`);
+    console.log(`🦊 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`🐱 Posts API: http://localhost:${PORT}/api/posts`);
+    console.log(`🐷 Tags API: http://localhost:${PORT}/api/tags`);
+    console.log(`🐻 Scoring Parameters: http://localhost:${PORT}/api/debug/scoring-curves`);
+    console.log(`🐮Scoring Visualization Tool: http://localhost:${PORT}/api/debug/visualization`);
 });
 export default app;
 //# sourceMappingURL=server.js.map

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import TagDataManager from '../services/TagDataManager.js';
 import db from '../database/connection.js';
+import { validateParams, tagSearchParamsSchema } from '../middleware/validation.js';
 const router = Router();
 /**
  * Trigger tag data refresh
@@ -30,15 +31,10 @@ router.post('/refresh', async (req, res) => {
 /**
  * Search for a specific tag
  */
-router.get('/search/:query', async (req, res) => {
+router.get('/search/:query', validateParams(tagSearchParamsSchema), async (req, res) => {
     try {
         const { query } = req.params;
-        if (!query || query.trim().length < 2) {
-            return res.status(400).json({
-                error: 'Invalid query',
-                message: 'Search query must be at least 2 characters'
-            });
-        }
+        // Validation is handled by middleware now
         const tag = await TagDataManager.findTag(query);
         if (!tag) {
             return res.status(404).json({

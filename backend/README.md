@@ -1,13 +1,13 @@
 # e621 Tag Challenge - Backend
 
-A Node.js/Express backend API for the e621 Tag Challenge game, featuring tag scoring, leaderboards, and game session management.
+A Node.js/Express backend API for the e621 Tag Challenge game, featuring tag scoring, daily challenges, and admin tools.
 
 ## Features
 
 - 🏷️ **Tag Management**: Download and process tag data from e621 API
 - 🏆 **Scoring System**: Smart scoring based on tag rarity and category
-- 📊 **Leaderboards**: Track top players and game statistics  
-- 🎮 **Game Sessions**: Complete game session management
+- � **Daily Challenges**: Server-generated daily content with blacklist filtering
+- 🔧 **Admin Tools**: Remote blacklist management for content moderation
 - 💾 **PostgreSQL**: Robust database with full-text search
 - 🔍 **Fuzzy Matching**: Intelligent tag matching for user input
 - 🛡️ **Production Ready**: Rate limiting, security headers, error handling
@@ -30,9 +30,9 @@ A Node.js/Express backend API for the e621 Tag Challenge game, featuring tag sco
    
    Create a PostgreSQL database and user:
    ```sql
-   CREATE DATABASE tag_challenge;
+   CREATE DATABASE e621_guessr;
    CREATE USER tag_user WITH PASSWORD 'your_password';
-   GRANT ALL PRIVILEGES ON DATABASE tag_challenge TO tag_user;
+   GRANT ALL PRIVILEGES ON DATABASE e621_guessr TO tag_user;
    ```
 
 3. **Environment Configuration**
@@ -42,7 +42,7 @@ A Node.js/Express backend API for the e621 Tag Challenge game, featuring tag sco
    # Database
    DB_HOST=localhost
    DB_PORT=5432
-   DB_NAME=tag_challenge
+   DB_NAME=e621_guessr
    DB_USER=tag_user
    DB_PASSWORD=your_password
    
@@ -94,7 +94,7 @@ npm run cli tags search "tag_name"  # Search for specific tag
 
 # Daily challenge management
 # Clear specific date's daily challenge (replace date as needed)
-psql -d tag_challenge -c "DELETE FROM daily_results WHERE date = '2025-10-08'; DELETE FROM daily_challenges WHERE date = '2025-10-08';"
+psql -d e621_guessr -c "DELETE FROM daily_results WHERE date = '2025-10-08'; DELETE FROM daily_challenges WHERE date = '2025-10-08';"
 # OR
 curl -X DELETE http://localhost:3001/api/daily/2025-10-08
 
@@ -113,6 +113,53 @@ npm run cli -- tags search "sleeping"  # Medium
 npm run cli -- tags search "scientist" # Rare
 ```
 
+## 🛠️ Admin Tools
+
+### Daily Challenge Blacklist Management
+
+The backend includes a blacklist system specifically for **daily challenges only**. This filters inappropriate content from daily challenge posts before they're served to players.
+
+**Note**: This blacklist only affects daily challenges. Regular gameplay uses client-side filtering (stored in browser localStorage) since there are no user accounts.
+
+#### API Endpoints
+- `GET /api/admin/blacklist` - List all blacklisted tags
+- `POST /api/admin/blacklist` - Add a new tag
+- `DELETE /api/admin/blacklist/:id` - Remove by ID  
+- `DELETE /api/admin/blacklist/tag/:tag` - Remove by name
+- `PUT /api/admin/blacklist/bulk` - Bulk add/remove operations
+
+All endpoints require `X-Admin-Key` header with the admin key.
+
+#### CLI Tool
+```bash
+# List all daily challenge blacklisted tags
+node scripts/manage-blacklist.js list
+
+# Add a tag to daily challenge blacklist
+node scripts/manage-blacklist.js add "inappropriate_tag"
+
+# Remove from daily challenge blacklist by ID or name
+node scripts/manage-blacklist.js remove 5
+node scripts/manage-blacklist.js remove "tag_name"
+
+# Bulk add multiple tags to daily challenge blacklist
+node scripts/manage-blacklist.js bulk-add tag1 tag2 tag3
+```
+
+#### cURL Examples
+```bash
+# List daily challenge blacklisted tags
+curl -H "X-Admin-Key: your_admin_key" http://localhost:3001/api/admin/blacklist
+
+# Add a tag to daily challenge blacklist
+curl -X POST -H "Content-Type: application/json" -H "X-Admin-Key: your_admin_key" \
+  -d '{"tag":"new_blocked_tag"}' http://localhost:3001/api/admin/blacklist
+
+# Remove a tag from daily challenge blacklist
+curl -X DELETE -H "X-Admin-Key: your_admin_key" \
+  http://localhost:3001/api/admin/blacklist/tag/tag_to_remove
+```
+
 ## API Endpoints
 
 ### Tag Scoring
@@ -126,7 +173,6 @@ npm run cli -- tags search "scientist" # Rare
 
 ### System
 - `GET /api/health` - Health check
-- `GET /api/stats` - System statistics
 
 ## Database Schema
 

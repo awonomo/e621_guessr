@@ -53,7 +53,6 @@ body {
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
-  margin: 0 0 1rem 0;
   font-weight: 600;
   line-height: 1.2;
   cursor: default;
@@ -107,6 +106,29 @@ button:disabled {
   cursor: not-allowed;
   transform: none;
 }
+
+ /* Button Styles */
+  .icon-button {
+    background: var(--bg-secondary);
+    border: 2px solid var(--accent-primary);
+    border-radius: 50%;
+    width: 3rem;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .icon-button:hover {
+    background: var(--text-accent);
+    color: var(--bg-);
+    transform: scale(1.05);
+  }
+
 
 input, select {
   padding: 0.75rem;
@@ -176,22 +198,28 @@ input:focus, select:focus {
   box-shadow: var(--shadow-light);
 }
 
-/* Game-specific styles */
 .game-screen {
   min-height: 100vh;
   background: var(--bg-primary);
   padding-bottom: 120px; /* Space for input bar */
 }
 
-.logo-header {
-  text-align: center;
-  margin: 2rem 0;
-}
+ .logo-header {
+    font-variant: italic;
+    font-size: 2rem;
+    font-weight: 200;
+    letter-spacing: 0.1em;
+    color: var(--text-accent);
+  }
 
-.logo-header h1 {
-  margin: 0;
-  color: var(--text-accent);
-}
+.score-heading {
+    font-size: 8rem;
+    font-weight: 900;
+    color: var(--text-accent);
+    text-shadow: 0 2px 8px rgba(252, 179, 66, 0.3);
+    font-variant-numeric: tabular-nums;
+  }
+
 
 /* Status indicators */
 .correct {

@@ -1,7 +1,12 @@
 // Simple in-memory rate limiting (in production, use Redis)
 const requestCounts = new Map();
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
-const MAX_REQUESTS = 100; // Max requests per window
+const MAX_REQUESTS = process.env.NODE_ENV === 'production' ? 100 : 500; // Higher limit for development
+// Export function to clear rate limits (for debugging)
+export const clearRateLimits = () => {
+    requestCounts.clear();
+    console.log('Rate limits cleared');
+};
 export const rateLimitMiddleware = (req, res, next) => {
     const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
     const now = Date.now();

@@ -1,44 +1,34 @@
 import { Router } from 'express';
 import db from '../database/connection.js';
+import { checkPostAgainstBlacklist } from '../utils/blacklist.js';
+import { validateParams, validateQuery, validateBody, dailyParamsSchema, dailySubmissionSchema, dailyStatusSchema } from '../middleware/validation.js';
 const router = Router();
-// BLACKLISTED tags
-const DAILY_BLACKLIST = [
-    'young',
-    'young_(lore)',
-    'cub',
-    'gore',
-    'death',
-    'suicide',
-    'blood',
-    'bad_parenting',
-    'babysitter',
-    'incest_(lore)',
-    'self-harm',
-    'abuse',
-    'kidnapping',
-    'slave',
-    'rape',
-    'forced',
-    'bestiality',
-    'extreme_penetraton',
-    'bestiality',
-    'anthro_on_feral',
-    'realistic_feral',
-    'human_on_feral',
-    'human_on_anthro',
-    'birth',
-    'scat',
-    'diaper',
-    'prolapse',
-    'extreme_prolapse',
-    'urethral_penetration',
-    'feces',
-    'disembowelment',
-    'dissection',
-    'entrails',
-    'nightmare_fuel',
-    'scatplay',
-];
+// Cache for daily challenge blacklisted tags (fetched from database)
+let DAILY_BLACKLIST = [];
+let blacklistLastFetched = 0;
+const BLACKLIST_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+/**
+ * Fetch daily challenge blacklisted tags from database with caching
+ */
+async function getBlacklistedTags() {
+    const now = Date.now();
+    // Return cached version if still fresh
+    if (DAILY_BLACKLIST.length > 0 && (now - blacklistLastFetched) < BLACKLIST_CACHE_TTL) {
+        return DAILY_BLACKLIST;
+    }
+    try {
+        const result = await db.query('SELECT tag FROM daily_blacklist_tags ORDER BY tag');
+        DAILY_BLACKLIST = result.rows.map((row) => row.tag);
+        blacklistLastFetched = now;
+        console.log(`📋 Loaded ${DAILY_BLACKLIST.length} daily challenge blacklisted tags from database`);
+        return DAILY_BLACKLIST;
+    }
+    catch (error) {
+        console.error('Error fetching daily challenge blacklisted tags:', error);
+        // Fall back to empty array if database fails
+        return [];
+    }
+}
 // Helper function to build E621 query for daily challenges
 function buildDailyE621Query(minPostScore) {
     const tags = [];
@@ -59,22 +49,15 @@ function buildDailyE621Query(minPostScore) {
 const DAILY_CONFIG = {
     ROUNDS: 5,
     TIME_LIMIT: 120, // 2 minutes in seconds
-    MIN_SCORE_THRESHOLD: 250, // Daily challenge passing score
-    MIN_POST_SCORE: 200 // Minimum e621 post score for quality
+    MIN_POST_SCORE: 400 // Minimum e621 post score for quality
 };
 /**
  * Get or generate daily challenge for a specific date
  */
-router.get('/:date', async (req, res) => {
+router.get('/:date', validateParams(dailyParamsSchema), async (req, res) => {
     try {
         const { date } = req.params;
-        // Validate date format (YYYY-MM-DD)
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-            return res.status(400).json({
-                error: 'Invalid date format',
-                message: 'Date must be in YYYY-MM-DD format'
-            });
-        }
+        // Date validation is handled by middleware now
         // Check if daily challenge already exists
         const existingChallenge = await getDailyChallenge(date);
         if (existingChallenge) {
@@ -102,16 +85,11 @@ router.get('/:date', async (req, res) => {
     }
 });
 // GET /api/daily/:date/status - Check if player has completed today's challenge
-router.get('/:date/status', async (req, res) => {
+router.get('/:date/status', validateParams(dailyParamsSchema), validateQuery(dailyStatusSchema), async (req, res) => {
     try {
         const { date } = req.params;
         const { player_name } = req.query;
-        if (!player_name || typeof player_name !== 'string') {
-            return res.status(400).json({
-                error: 'Player name required',
-                message: 'Please provide player_name as query parameter'
-            });
-        }
+        // Validation is handled by middleware now
         // Check if player already submitted for this date
         const existingSubmission = await checkPlayerSubmission(date, player_name);
         if (existingSubmission) {
@@ -122,13 +100,21 @@ router.get('/:date/status', async (req, res) => {
             if (typeof rounds === 'string') {
                 rounds = JSON.parse(rounds);
             }
+            // Also get the challenge data to avoid a second API call
+            const challengeData = await getDailyChallenge(date);
             return res.json({
                 completed: true,
                 result: {
                     score: result.rows[0].score,
                     rounds: rounds,
                     completed_at: result.rows[0].completed_at
-                }
+                },
+                // Include challenge data to avoid second API call
+                challenge: challengeData ? {
+                    date: challengeData.date,
+                    posts: challengeData.posts,
+                    config: DAILY_CONFIG
+                } : null
             });
         }
         res.json({ completed: false });
@@ -144,29 +130,11 @@ router.get('/:date/status', async (req, res) => {
 /**
  * Submit daily challenge result
  */
-router.post('/:date/submit', async (req, res) => {
+router.post('/:date/submit', validateParams(dailyParamsSchema), validateBody(dailySubmissionSchema), async (req, res) => {
     try {
         const { date } = req.params;
         const { player_name, score, rounds } = req.body;
-        // Validate input
-        if (!player_name || typeof player_name !== 'string') {
-            return res.status(400).json({
-                error: 'Invalid input',
-                message: 'Player name is required'
-            });
-        }
-        if (typeof score !== 'number' || score < 0) {
-            return res.status(400).json({
-                error: 'Invalid input',
-                message: 'Score must be a non-negative number'
-            });
-        }
-        if (!Array.isArray(rounds) || rounds.length !== DAILY_CONFIG.ROUNDS) {
-            return res.status(400).json({
-                error: 'Invalid input',
-                message: `Rounds must be an array of ${DAILY_CONFIG.ROUNDS} items`
-            });
-        }
+        // Validation is handled by middleware now
         // Check if player already submitted for this date
         const existingSubmission = await checkPlayerSubmission(date, player_name);
         if (existingSubmission) {
@@ -187,8 +155,7 @@ router.post('/:date/submit', async (req, res) => {
         await saveDailyResult(date, player_name, score, rounds);
         res.json({
             success: true,
-            message: 'Daily challenge result saved',
-            passed: score >= DAILY_CONFIG.MIN_SCORE_THRESHOLD
+            message: 'Daily challenge result saved'
         });
     }
     catch (error) {
@@ -200,7 +167,11 @@ router.post('/:date/submit', async (req, res) => {
     }
 });
 // DELETE /api/daily/:date - Clear daily challenge (for debugging)
-router.delete('/:date', async (req, res) => {
+router.delete('/:date', validateParams(dailyParamsSchema), async (req, res) => {
+    // Only allow in development
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(404).json({ error: 'Not found' });
+    }
     try {
         const { date } = req.params;
         await db.query('DELETE FROM daily_challenges WHERE date = $1', [date]);
@@ -249,7 +220,7 @@ async function generateDailyChallenge() {
             const apiUrl = `https://e621.net/posts.json?tags=${encodeURIComponent(queryTags)}&limit=1`;
             const response = await fetch(apiUrl, {
                 headers: {
-                    'User-Agent': 'e621TagChallenge/1.0 (https://github.com/user/repo)'
+                    'User-Agent': 'e621Guessr/1.0 (https://github.com/awonomo/e621_guessr)'
                 }
             });
             if (!response.ok) {
@@ -261,7 +232,7 @@ async function generateDailyChallenge() {
             }
             const post = data.posts[0];
             // Check if post passes blacklist
-            if (passesBlacklist(post)) {
+            if (await passesBlacklist(post)) {
                 console.log('Valid post found:', post.id, '(' + (validPosts.length + 1) + '/' + DAILY_CONFIG.ROUNDS + ')');
                 validPosts.push(post); // Use the full E621Post object directly
             }
@@ -280,16 +251,11 @@ async function generateDailyChallenge() {
     return validPosts;
 }
 /**
- * Check if a post passes the blacklist filter
+ * Check if a post passes the daily challenge blacklist filter
  */
-function passesBlacklist(post) {
-    const allTags = Object.values(post.tags).flat();
-    for (const blacklistedTag of DAILY_BLACKLIST) {
-        if (allTags.includes(blacklistedTag)) {
-            return false;
-        }
-    }
-    return true;
+async function passesBlacklist(post) {
+    const blacklistedTags = await getBlacklistedTags();
+    return checkPostAgainstBlacklist(post, blacklistedTags);
 }
 /**
  * Save daily challenge to database
