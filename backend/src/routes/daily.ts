@@ -95,6 +95,17 @@ const DAILY_CONFIG = {
 };
 
 /**
+ * Get current date in CST timezone (YYYY-MM-DD format)
+ * This ensures consistency between date column and created_at timestamp
+ */
+function getTodayInCST(): string {
+  const now = new Date();
+  const cstOffset = -6; // CST is UTC-6
+  const cstTime = new Date(now.getTime() + (cstOffset * 60 * 60 * 1000));
+  return cstTime.toISOString().split('T')[0]; // YYYY-MM-DD format
+}
+
+/**
  * Get or generate daily challenge for a specific date
  */
 router.get('/:date', validateParams(dailyParamsSchema), async (req, res) => {
@@ -353,8 +364,9 @@ async function saveDailyChallenge(date: string, posts: E621Post[]): Promise<Dail
   console.log('JSON serialized successfully, length:', postsJson.length);
   
   try {
+    // Use CST timezone for created_at to match the date column
     const result = await db.query(
-      'INSERT INTO daily_challenges (date, posts, created_at) VALUES ($1, $2, NOW()) RETURNING date, created_at',
+      "INSERT INTO daily_challenges (date, posts, created_at) VALUES ($1, $2, NOW() AT TIME ZONE 'America/Chicago') RETURNING date, created_at",
       [date, postsJson]
     );
 
@@ -386,8 +398,9 @@ async function checkPlayerSubmission(date: string, playerName: string): Promise<
  * Save daily challenge result
  */
 async function saveDailyResult(date: string, playerName: string, score: number, rounds: any[]): Promise<void> {
+  // Use CST timezone for completed_at to match the date column
   await db.query(
-    'INSERT INTO daily_results (date, player_name, score, rounds, completed_at) VALUES ($1, $2, $3, $4, NOW())',
+    "INSERT INTO daily_results (date, player_name, score, rounds, completed_at) VALUES ($1, $2, $3, $4, NOW() AT TIME ZONE 'America/Chicago')",
     [date, playerName, score, JSON.stringify(rounds)]
   );
 }

@@ -1,7 +1,9 @@
 // Simple in-memory rate limiting (in production, use Redis)
 const requestCounts = new Map();
-const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
-const MAX_REQUESTS = process.env.NODE_ENV === 'production' ? 100 : 500; // Higher limit for development
+// Rate limiting configuration
+// Typical gameplay: ~60-70 requests per round, players may do 2-3 rounds in 15 minutes
+const RATE_LIMIT_WINDOW = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'); // 15 minutes default
+const MAX_REQUESTS = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || (process.env.NODE_ENV === 'production' ? '300' : '1000'));
 // Export function to clear rate limits (for debugging)
 export const clearRateLimits = () => {
     requestCounts.clear();

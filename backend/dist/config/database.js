@@ -25,8 +25,8 @@ function parseDatabaseUrl(databaseUrl) {
 const databaseUrl = process.env.DATABASE_URL;
 const dbConfigFromUrl = databaseUrl ? parseDatabaseUrl(databaseUrl) : null;
 // Debug logging for DATABASE_URL parsing
-console.log('🔍 DATABASE_URL from env:', process.env.DATABASE_URL);
-console.log('🔍 Parsed result:', dbConfigFromUrl);
+// console.log('🔍 DATABASE_URL from env:', process.env.DATABASE_URL);
+// console.log('🔍 Parsed result:', dbConfigFromUrl);
 // Log database configuration for debugging
 console.log('🗃️  Database Configuration:');
 if (dbConfigFromUrl) {

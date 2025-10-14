@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { gameActions, userStats, dailyChallenge } from '../lib/gameStore';
+  import { gameActions, userStats, dailyChallenge, isLoadingDaily } from '../lib/gameStore';
   import { onMount } from 'svelte';
   import Stats from '../components/Stats.svelte';
   
@@ -46,17 +46,25 @@
       <button 
         class="daily-button" 
         onclick={startDailyChallenge}
+        disabled={$isLoadingDaily}
       >
-        Play Daily Challenge
+        {#if $isLoadingDaily}
+          <span class="loading-content">
+            <span class="spinner"></span>
+            Loading Challenge...
+          </span>
+        {:else}
+          Daily Challenge
+        {/if}
       </button>
       
       <button class="secondary-button" onclick={toggleStats}>
-        Statistics
+        Stats
       </button>
       
-      <button class="secondary-button" onclick={() => alert('Coming soon!')}>
+      <!-- <button class="secondary-button" onclick={() => alert('Coming soon!')}>
         Settings
-      </button>
+      </button> -->
     </div>
   </div>
   
@@ -135,6 +143,38 @@
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
+  }
+
+  .daily-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-heavy);
+  }
+
+  .daily-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .loading-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   .secondary-button {

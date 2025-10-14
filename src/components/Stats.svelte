@@ -19,7 +19,7 @@
     tabindex="0"
   >
     <div class="modal-header">
-      <h2>Your Statistics</h2>
+      <h2>Your Stats</h2>
       <button class="close-button" onclick={onClose}>×</button>
     </div>
     <div class="stats-grid">

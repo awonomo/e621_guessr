@@ -31,6 +31,7 @@ const appState = writable<AppState>({
   currentSession: null,
   dailyChallenge: null,
   isPaused: false,
+  isLoadingDaily: false,
   userStats: {
     gamesPlayed: 0,
     totalScore: 0,
@@ -57,6 +58,7 @@ export const dailyChallenge = derived(appState, $state => $state.dailyChallenge)
 export const userStats = derived(appState, $state => $state.userStats);
 export const settings = derived(appState, $state => $state.settings);
 export const isPaused = derived(appState, $state => $state.isPaused);
+export const isLoadingDaily = derived(appState, $state => $state.isLoadingDaily);
 
 export const currentRound = derived(appState, $state => {
   if (!$state.currentSession || $state.currentSession.rounds.length === 0) return null;
@@ -624,6 +626,9 @@ export const gameActions = {
   },
 
   async startDailyChallenge() {
+    // Set loading state
+    appState.update(state => ({ ...state, isLoadingDaily: true }));
+    
     try {
       // Get today's date in Central Standard Time (CST)
       const now = new Date();
@@ -707,6 +712,9 @@ export const gameActions = {
     } catch (error) {
       console.error('[GameStore] Failed to load daily challenge:', error);
       alert(`Network error loading daily challenge: ${error.message}`);
+    } finally {
+      // Clear loading state
+      appState.update(state => ({ ...state, isLoadingDaily: false }));
     }
   },
 

@@ -142,6 +142,7 @@ export interface AppState {
   dailyChallenge: DailyChallenge | null;
   userStats: GameStats;
   isPaused: boolean;
+  isLoadingDaily: boolean;
   settings: {
     soundEnabled: boolean;
     theme: 'light' | 'dark' | 'auto';

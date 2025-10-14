@@ -59,6 +59,16 @@ const DAILY_CONFIG = {
     MIN_POST_SCORE: 400 // Minimum e621 post score for quality
 };
 /**
+ * Get current date in CST timezone (YYYY-MM-DD format)
+ * This ensures consistency between date column and created_at timestamp
+ */
+function getTodayInCST() {
+    const now = new Date();
+    const cstOffset = -6; // CST is UTC-6
+    const cstTime = new Date(now.getTime() + (cstOffset * 60 * 60 * 1000));
+    return cstTime.toISOString().split('T')[0]; // YYYY-MM-DD format
+}
+/**
  * Get or generate daily challenge for a specific date
  */
 router.get('/:date', validateParams(dailyParamsSchema), async (req, res) => {
@@ -272,7 +282,8 @@ async function saveDailyChallenge(date, posts) {
     const postsJson = JSON.stringify(posts);
     console.log('JSON serialized successfully, length:', postsJson.length);
     try {
-        const result = await db.query('INSERT INTO daily_challenges (date, posts, created_at) VALUES ($1, $2, NOW()) RETURNING date, created_at', [date, postsJson]);
+        // Use CST timezone for created_at to match the date column
+        const result = await db.query("INSERT INTO daily_challenges (date, posts, created_at) VALUES ($1, $2, NOW() AT TIME ZONE 'America/Chicago') RETURNING date, created_at", [date, postsJson]);
         // Return the challenge using the original posts parameter (no need to re-parse from DB)
         return {
             date: result.rows[0].date,
@@ -296,7 +307,8 @@ async function checkPlayerSubmission(date, playerName) {
  * Save daily challenge result
  */
 async function saveDailyResult(date, playerName, score, rounds) {
-    await db.query('INSERT INTO daily_results (date, player_name, score, rounds, completed_at) VALUES ($1, $2, $3, $4, NOW())', [date, playerName, score, JSON.stringify(rounds)]);
+    // Use CST timezone for completed_at to match the date column
+    await db.query("INSERT INTO daily_results (date, player_name, score, rounds, completed_at) VALUES ($1, $2, $3, $4, NOW() AT TIME ZONE 'America/Chicago')", [date, playerName, score, JSON.stringify(rounds)]);
 }
 export default router;
 //# sourceMappingURL=daily.js.map

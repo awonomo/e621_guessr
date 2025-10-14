@@ -228,7 +228,6 @@
     margin: 0 0 0.5rem 0;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    text-shadow: 0 2px 8px rgba(252, 179, 66, 0.3);
   }
   
   .daily-challenge-date {
