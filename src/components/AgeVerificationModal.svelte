@@ -93,9 +93,9 @@
       </button>
     </div>
     
-    <div class="modal-footer-notice">
+    <!-- <div class="modal-footer-notice">
       <small>This verification will be remembered for 30 days on this device.</small>
-    </div>
+    </div> -->
   </div>
 </div>
 

@@ -333,7 +333,7 @@
       position: relative;
     }
 
-    #logoHeader {
+    .logo-header {
       display: none;
     }
     
