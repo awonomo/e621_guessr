@@ -1,7 +1,7 @@
 {
   "name": "e621-guessr",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,11 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "prettier --plugin-search-dir . --check . && eslint .",
-    "format": "prettier --plugin-search-dir . --write ."
+    "format": "prettier --plugin-search-dir . --write .",
+    "patch": "bash scripts/version.sh patch",
+    "minor": "bash scripts/version.sh minor",
+    "major": "bash scripts/version.sh major",
+    "version:check": "bash scripts/version.sh"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.1.1",
