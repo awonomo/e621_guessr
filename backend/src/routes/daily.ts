@@ -364,9 +364,9 @@ async function saveDailyChallenge(date: string, posts: E621Post[]): Promise<Dail
   console.log('JSON serialized successfully, length:', postsJson.length);
   
   try {
-    // Use CST timezone for created_at to match the date column
+    // NOW() will use the database timezone (America/Chicago)
     const result = await db.query(
-      "INSERT INTO daily_challenges (date, posts, created_at) VALUES ($1, $2, NOW() AT TIME ZONE 'America/Chicago') RETURNING date, created_at",
+      'INSERT INTO daily_challenges (date, posts, created_at) VALUES ($1, $2, NOW()) RETURNING date, created_at',
       [date, postsJson]
     );
 
@@ -398,9 +398,9 @@ async function checkPlayerSubmission(date: string, playerName: string): Promise<
  * Save daily challenge result
  */
 async function saveDailyResult(date: string, playerName: string, score: number, rounds: any[]): Promise<void> {
-  // Use CST timezone for completed_at to match the date column
+  // NOW() will use the database timezone (America/Chicago)
   await db.query(
-    "INSERT INTO daily_results (date, player_name, score, rounds, completed_at) VALUES ($1, $2, $3, $4, NOW() AT TIME ZONE 'America/Chicago')",
+    'INSERT INTO daily_results (date, player_name, score, rounds, completed_at) VALUES ($1, $2, $3, $4, NOW())',
     [date, playerName, score, JSON.stringify(rounds)]
   );
 }

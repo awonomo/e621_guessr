@@ -77,6 +77,7 @@
 <style>
   .home-screen {
     min-height: 100vh;
+    min-height: 100dvh; /* Use dynamic viewport height for Safari/Chrome mobile */
     display: flex;
     flex-direction: column;
     justify-content: center;

@@ -37,15 +37,13 @@
   }
   
   function quitGame() {
-    if (confirm('Are you sure you want to quit? Your progress will be lost.')) {
+    // if (confirm('Are you sure you want to quit? Your progress will be lost.')) {
       gameActions.resetGame();
-    }
+    // }
   }
   
   function skipRound() {
-    if (confirm('Skip to the next round?')) {
-      gameActions.endRound();
-    }
+    gameActions.endRound();
   }
   
   // Calculate tag progress using $derived
@@ -54,25 +52,21 @@
   
   let correctTags = $derived($currentRound?.correctGuesses ?
     Object.values($currentRound.correctGuesses).flat().length : 0);
+
+  // Pause count for showing skip button on pause overlay
+  let pausesRemaining = $derived(3 - ($currentRound?.pauseCount || 0));
+  let pauseLimitReached = $derived(pausesRemaining <= 0);
+
 </script>
 
 <div class="gameplay-screen">
-  <!-- Top UI Bar -->
+  <!-- Top UI Bar (Desktop only) -->
   <div class="top-bar">
     <button class="icon-button quit-button" onclick={quitGame} title="Quit Game">
       ✕
     </button>
     <h1 class="logo-header">e621_guessr</h1>
     <div style="flex:1"></div>
-    {#if $currentSession?.settings.mode !== 'endless'}
-      <div class="timer-container timer-container-mobile">
-        <Timer 
-          onTimeUp={handleTimeUp}
-          ontogglePause={togglePause}
-          variant="mobile"
-        />
-      </div>
-    {/if}
     <button class="icon-button skip-button" onclick={skipRound} title="Skip Round">
       ⏭
     </button>
@@ -81,7 +75,39 @@
   <!-- Main Game Area -->
   <div class="game-grid">
 
-    <!-- Score Display Area -->
+    <!-- Desktop: Round Title -->
+    <h2 class="round-title">Round {($currentSession?.currentRound || 0) + 1}</h2>
+    
+    <!-- Desktop: Timer -->
+    {#if $currentSession?.settings.mode !== 'endless'}
+      <div class="timer-area">
+        <Timer 
+          onTimeUp={handleTimeUp}
+          ontogglePause={togglePause}
+          onSkip={skipRound}
+          variant="desktop"
+        />
+      </div>
+    {/if}
+    
+    <!-- Mobile: Timer and Score Row -->
+    <div class="mobile-header">
+      {#if $currentSession?.settings.mode !== 'endless'}
+        <div class="timer-container-mobile">
+          <Timer 
+            onTimeUp={handleTimeUp}
+            ontogglePause={togglePause}
+            onSkip={skipRound}
+            variant="mobile"
+          />
+        </div>
+      {/if}
+      <div class="score-display-mobile">
+        <ScoreDisplay score={$currentRound?.score || 0} />
+      </div>
+    </div>
+
+    <!-- Desktop: Score Display Area -->
     <div class="score-display-area">
       <ScoreDisplay score={$currentRound?.score || 0} />
     </div>
@@ -92,6 +118,12 @@
         <PostViewer 
           post={$currentRound.post} 
           isPaused={$isPaused}
+          {quitGame}
+          {skipRound}
+          {pausesRemaining}
+          {pauseLimitReached}
+          roundNumber={($currentSession?.currentRound || 0) + 1}
+          totalRounds={$currentSession?.settings.mode === 'endless' ? undefined : $currentSession?.settings.totalRounds}
         />
       {:else}
         <div class="loading-post">
@@ -100,9 +132,7 @@
       {/if}
     </div>
 
-    <h2 class="round-title">Round {($currentSession?.currentRound || 0) + 1}</h2>
-
-    <!-- Scoreboard Area -->
+    <!-- Scoreboard Area (Desktop only) -->
     <div class="tag-list">
       <TagList 
         roundData={$currentRound}
@@ -122,23 +152,15 @@
       />
     </div>
 
-    {#if $currentSession?.settings.mode !== 'endless'}
-      <div class="timer-container timer-container-desktop">
-        <Timer 
-          onTimeUp={handleTimeUp}
-          ontogglePause={togglePause}
-          variant="desktop"
-        />
-      </div>
-    {/if}
-
   </div> <!-- End of game-grid! -->
 </div>
 
 <style>
   .gameplay-screen {
     height: 100vh;
+    height: 100dvh; /* Use dynamic viewport height for Safari/Chrome mobile */
     max-height: 100vh;
+    max-height: 100dvh;
     background: var(--bg-primary);
     color: var(--text-primary);
     display: flex;
@@ -170,30 +192,6 @@
     letter-spacing: 0.1em;
     color: var(--text-accent);
     margin: 0;
-  }
-  
-  .timer-container {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  .timer-container-mobile {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    display: none;
-  }
-  
-  .timer-container-desktop {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 1rem 0;
-    margin-bottom: 1rem;
-    order: 2;
   }
   
   .icon-button {
@@ -229,6 +227,7 @@
     box-sizing: border-box;
   }
 
+  /* Desktop styles */
   .round-title {
     grid-column: 2;
     grid-row: 1;
@@ -240,6 +239,34 @@
     font-weight: 300;
     color: var(--text-secondary);
     border-bottom: 1px solid var(--bg-secondary);
+  }
+  
+  .timer-area {
+    grid-column: 2;
+    grid-row: 5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem 0;
+  }
+  
+  /* Mobile header - hidden on desktop */
+  .mobile-header {
+    display: none;
+  }
+  
+  .timer-container-mobile {
+    flex: 1;
+    display: flex;
+    justify-content: flex-start;
+  }
+  
+  .score-display-mobile {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding-right: 1.5rem;
   }
   
   .guess-input-area {
@@ -309,17 +336,6 @@
     font-weight: 600;
     font-size: 1.25rem;
   }
-
-  .timer-container-desktop {
-    grid-column: 2;
-    grid-row: 5;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0.25rem 0;
-    background-color: transparent;
-    color: var(--bg-primary);
-  }
   
   /* breakpoint */
   @media (max-width: 1200px) {
@@ -330,7 +346,21 @@
   
   @media (max-width: 768px) {
     .gameplay-screen {
-      position: relative;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Hide top bar on mobile */
+    .top-bar {
+      display: none;
     }
 
     .logo-header {
@@ -338,29 +368,41 @@
     }
     
     .game-grid {
-      grid-template-columns: 1fr 1fr 1fr;
-      grid-template-rows: auto 5fr 1fr 0.5fr;
-      padding: 0 1rem 1rem 1rem;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      position: relative;
+      gap: 0rem;
+      padding: 0rem;
     }
 
-    .top-bar {
-      padding-bottom: 1rem;
+    /* Hide desktop round title on mobile */
+    .round-title {
+      display: none;
+    }
+    
+    /* Hide desktop timer on mobile */
+    .timer-area {
+      display: none;
+    }
+
+    /* Show mobile header with timer and score */
+    .mobile-header {
+      display: flex;
+      gap: 0rem;
+      align-items: center;
+      padding: 0rem 0rem;
+      background: var(--bg-primary);
+      flex-shrink: 0;
+      z-index: 20;
       border-bottom: 1px solid var(--bg-secondary);
+      order: 1;
     }
 
     .score-display-area {
-      grid-column: 2 / 4;
-      grid-row: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-    }
-
-    .round-title {
-      grid-column: 1;
-      border-bottom: 0px;
-      font-size: 1.25rem;
+      display: none;
     }
 
     .progress-text {
@@ -368,38 +410,33 @@
     }
 
     .post-area {
-      grid-column: 1 / 4;
-      grid-row: 2;
+      order: 2;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      padding: 0.5rem 1rem;
+      -webkit-overflow-scrolling: touch;
     }
 
     .guess-input-area {
-      grid-column: 1 / 4;
-      grid-row: 4;
-      order: 1;
-    }
-
-    .timer-container-mobile {
-      display: flex;
-    }
-    
-    .timer-container-desktop {
-      display: none;
+      order: 3;
+      flex-shrink: 0;
+      padding: 0.75rem 1rem;
+      background: var(--bg-primary);
+      position: relative;
+      z-index: 20;
+      border-top: 1px solid var(--bg-secondary);
     }
     
     .tag-list {
-      grid-column: 1 / 4;
-      grid-row: 3;
-      order: 2;
-      flex-direction: row;
-      padding: 0;
-      border-radius: 8px;
+      display: none;
     }
 
     .tag-progress {
-      grid-column: 3;
-      grid-row: 1;
-      margin-top: 0;
-      border-top: none;
+      display: none;
     }
 
     .skip-button {

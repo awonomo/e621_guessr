@@ -15,6 +15,20 @@ import {
 } from './types.js';
 import backendApi from './backendApi.js';
 
+// Polyfill for crypto.randomUUID() for older browsers (especially mobile Safari)
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  
+  // Fallback implementation for browsers without crypto.randomUUID
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 // Player ID management
 function getOrCreatePlayerId(): string {
   let playerId = localStorage.getItem('playerId');
@@ -99,7 +113,7 @@ export const gameActions = {
   },
 
   startGame(settings: GameSettings, posts: Post[]) {
-    const sessionId = crypto.randomUUID();
+    const sessionId = generateUUID();
     const now = new Date();
     
     const rounds: RoundData[] = posts.slice(0, settings.totalRounds).map(post => ({

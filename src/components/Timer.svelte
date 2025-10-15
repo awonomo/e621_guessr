@@ -4,13 +4,18 @@
   interface Props {
     onTimeUp: () => void;
     ontogglePause?: () => void;
+    onSkip?: () => void;
     variant?: 'desktop' | 'mobile';
   }
   
-  let { onTimeUp, ontogglePause, variant = 'desktop' }: Props = $props();
+  let { onTimeUp, ontogglePause, onSkip, variant = 'desktop' }: Props = $props();
   
   let localTimeRemaining = $state(0);
   let previousState: string | undefined;
+  
+  // Calculate pauses remaining
+  let pausesRemaining = $derived(3 - ($currentRound?.pauseCount || 0));
+  let pauseLimitReached = $derived(pausesRemaining <= 0);
   
   // Initialize local time when round changes
   $effect(() => {
@@ -68,8 +73,14 @@
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   }
   
-  function togglePause() {
-    ontogglePause?.();
+  function handleButtonClick() {
+    if (pauseLimitReached && onSkip) {
+      // When pauses are exhausted, skip the round
+      onSkip();
+    } else {
+      // Otherwise, toggle pause
+      ontogglePause?.();
+    }
   }
 </script>
 
@@ -85,21 +96,48 @@
     
     <button 
       class="pause-button {variant}"
-      onclick={togglePause}
-      title={!$isPaused ? 'Pause Game' : 'Resume Game'}
+      onclick={handleButtonClick}
+      title={pauseLimitReached ? 'Skip Round' : (!$isPaused ? 'Pause Game' : 'Resume Game')}
     >
-      {#if !$isPaused}
-        <!-- Pause icon -->
-         <span>⏯</span>
+      {#if pauseLimitReached}
+        <!-- Skip icon when no pauses remaining - U+FE0E forces text presentation -->
+        <span class="no-emoji">⏭︎</span>
+      {:else if !$isPaused}
+        <!-- Pause icon - U+FE0E forces text presentation -->
+        <span class="no-emoji">⏯︎</span>
       {:else}
-        <!-- Play icon -->
-         <span>⏯</span>
+        <!-- Play icon - U+FE0E forces text presentation -->
+        <span class="no-emoji">⏯︎</span>
       {/if}
     </button>
   </div>
 </div>
 
 <style>
+  /* Prevent emoji transformation - use system fonts without emoji support */
+  .no-emoji {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    font-variant-emoji: text !important;
+    display: inline-block;
+  }
+  
+  /* Override emoji rendering at button level */
+  .pause-button {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "liga" 0, "calt" 0;
+    -webkit-font-feature-settings: "liga" 0, "calt" 0;
+  }
+  
+  .pause-button span {
+    font-style: normal !important;
+    font-weight: normal !important;
+    text-rendering: optimizeLegibility;
+    display: inline-block;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  
   .timer-container {
     position: relative;
     width: 100%;
@@ -109,6 +147,8 @@
   .timer-container.mobile .timer-display {
     background: transparent;
     border: none;
+    margin: 0;
+    padding: 0;
   }
   
   .timer-container.mobile .time-text {
@@ -119,9 +159,11 @@
     font-size: 2rem;
   }
 
-    .pause-button.mobile {
+  .pause-button.mobile {
     color: var(--text-light);
     font-size: 2rem;
+    padding: 0;
+    padding-left: 0.5rem;
   }
   
   .timer-display {
@@ -179,7 +221,7 @@
   
   .pause-button {
     display: flex;
-    font-size: 2rem;
+    font-size: 3rem;
     align-items: center;
     justify-content: center;
     cursor: pointer;
@@ -187,6 +229,7 @@
     flex-shrink: 0;
     background: transparent;
     padding-left: 1rem;
+    margin: 0;
   }
   
   .pause-button:hover {

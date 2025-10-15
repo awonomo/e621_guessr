@@ -210,9 +210,9 @@
 <div class="setup-screen">
   <div class="container">
     <header class="header">
-      <button class="back-button" onclick={goBack}>
+      <!-- <button class="back-button" onclick={goBack}>
         ← Back
-      </button>
+      </button> -->
       <h1>Game Setup</h1>
     </header>
     
@@ -332,7 +332,7 @@
         </button>
         <button 
           type="submit" 
-          class="primary-button"
+          class="primary-button start-button"
           disabled={isLoading}
         >
           {isLoading ? 'Loading...' : 'Start Game'}
@@ -349,17 +349,19 @@
     align-items: center;
     background: var(--bg-primary);
     padding: 2rem 0;
+    box-sizing: border-box;
   }
   
   .container {
     max-width: 800px;
+    width: 100%;
     margin: 0 auto;
     padding: 0 1rem;
+    box-sizing: border-box;
   }
   
   .header {
     text-align: center;
-    margin-bottom: 3rem;
     position: relative;
   }
   
@@ -382,7 +384,7 @@
   
   .header h1 {
     color: var(--text-accent);
-    margin-bottom: 0.5rem;
+    margin-top: 0;
   }
   
   .label-text {
@@ -397,6 +399,7 @@
     padding: 2rem;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-light);
+    box-sizing: border-box;
   }
   
   .form-grid {
@@ -520,7 +523,7 @@
   }
   
   .toggle-button {
-    padding: 0.5rem 1rem;
+    padding: 0.25rem;
     border: 2px solid var(--bg-primary);
     border-radius: var(--border-radius);
     background: var(--bg-primary);
@@ -637,7 +640,6 @@
   }
   
   .primary-button {
-    background: var(--bg-accent);
     color: var(--bg-primary);
     padding: 1rem 2rem;
     font-weight: 600;
@@ -675,8 +677,22 @@
   }
   
   @media (max-width: 768px) {
+    .setup-screen {
+      padding: 1rem 0;
+      align-items: flex-start;
+    }
+
+    .container {
+      padding: 0 0.75rem;
+    }
+
+    .setup-form {
+      padding: 1.5rem 1rem;
+    }
+
     .form-grid {
       grid-template-columns: 1fr;
+      gap: 1.25rem;
     }
     
     .span-2 {
@@ -684,27 +700,87 @@
     }
     
     .form-actions {
-      flex-direction: column;
+      flex-direction: column-reverse;
+    }
+
+    .toggle-button {
+      width: 3rem;
     }
     
     .back-button {
       position: static;
       margin-bottom: 1rem;
+      width: 100%;
+    }
+
+    .header {
+      margin-bottom: 0rem;
+    }
+
+    .header h1 {
+      font-size: 2rem;
     }
     
     .upvotes-control {
-      flex-direction: column;
-      align-items: stretch;
+      flex-direction: row;
+      align-items: center;
       gap: 0.75rem;
     }
     
     .toggle-container {
-      align-self: flex-start;
+      flex-shrink: 0;
+    }
+    
+    .slider-container {
+      flex: 1;
     }
     
     .slider-value {
-      min-width: auto;
-      text-align: left;
+      min-width: 3.5rem;
+      text-align: right;
+    }
+
+    .timelimit-options {
+      gap: 0.5rem;
+    }
+
+    .timelimit-button {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .rating-options {
+      gap: 0.75rem;
+    }
+
+    .rating-button {
+      flex: 1;
+    }
+
+    .form-group {
+      padding: 0rem;
+      margin: 0rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .container {
+      padding: 0 0.5rem;
+    }
+
+    .setup-form {
+      padding: 1rem 0.75rem;
+    }
+
+    .timelimit-button {
+      padding: 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    .primary-button,
+    .secondary-button {
+      padding: 0.875rem 1.5rem;
     }
   }
 </style>

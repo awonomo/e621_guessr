@@ -1,0 +1,205 @@
+/* Shared styles for RoundSummaryScreen and GameSummaryScreen */
+
+/* Base screen layout */
+.summary-screen-base {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Static Top Bar */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0.75rem;
+  z-index: 100;
+  flex-shrink: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--bg-secondary);
+}
+
+.logo-header {
+  padding-left: 3rem;
+  text-align: left;
+  margin: 0;
+}
+
+/* Summary Page - the first page with score */
+.summary-page {
+  min-height: calc(100vh - 6rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  width: 100%;
+  background: var(--bg-primary);
+  z-index: 1;
+  position: absolute;
+  top: 6rem;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Summary Content - centered content within summary page */
+.summary-content {
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+}
+
+/* Round/Game Title */
+.round-title {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--text-secondary);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Score Heading */
+.score-heading {
+  font-size: 8rem;
+  font-weight: 900;
+  color: var(--text-accent);
+  text-shadow: 0 2px 8px rgba(252, 179, 66, 0.3);
+  font-variant-numeric: tabular-nums;
+}
+
+.score-heading.glowing {
+  animation: glow 2s ease-in-out infinite;
+  text-shadow: 0 0 20px rgba(252, 179, 66, 0.5);
+}
+
+/* Total Score Display */
+.total-score {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.total-score .label {
+  color: var(--text-secondary);
+}
+
+.total-score .score {
+  padding-left: 0.75rem;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-right: 0.1em;
+}
+
+.total-score .pts {
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-left: 0;
+}
+
+/* Scroll Prompt */
+.scroll-prompt {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+}
+
+.scroll-prompt.visible {
+  opacity: 1;
+}
+
+.scroll-prompt .arrow {
+  font-size: 2rem;
+  animation: bounce 2s;
+}
+
+/* Breakdown Page - the second page with tag details */
+.breakdown-page {
+  border-top: 2px dotted var(--bg-secondary);
+  min-height: calc(100vh - 6rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  width: 100%;
+  background: var(--bg-primary);
+  z-index: 0;
+  position: absolute;
+  top: 100vh;
+  left: 0;
+  right: 0;
+  padding-top: 5rem;
+  padding-bottom: 8rem;
+}
+
+/* Animations */
+@keyframes glow {
+  0%,
+  100% {
+    text-shadow: 0 0 20px rgba(252, 179, 66, 0.1);
+  }
+  50% {
+    text-shadow: 0 0 30px rgba(252, 179, 66, 0.3);
+  }
+}
+
+@keyframes bounce {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .round-title {
+    font-size: 2rem;
+  }
+
+  .logo-header {
+    padding-left: 0;
+    text-align: center;
+  }
+
+  .score-heading {
+    font-size: 6rem;
+  }
+
+  .score-heading.glowing {
+    text-shadow: 
+      0 0 8px rgba(252, 179, 66, 0.8),
+      0 0 15px rgba(252, 179, 66, 0.6),
+      0 0 25px rgba(252, 179, 66, 0.4),
+      0 2px 6px rgba(252, 179, 66, 0.3);
+    transform: scale(1.03);
+  }
+
+  .total-score {
+    font-size: 1rem;
+  }
+}

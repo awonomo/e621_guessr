@@ -97,6 +97,10 @@
     align-items: center;
     margin-bottom: 2rem;
   }
+
+  .modal-header h2 {
+    margin: 0;
+  }
   .close-button {
     background: none;
     color: var(--text-secondary);
@@ -127,7 +131,7 @@
     text-align: center;
   }
   .stat-number {
-    font-size: 2rem;
+    font-size: 3rem;
     font-weight: 700;
     color: var(--text-accent);
     margin-bottom: 0.5rem;
@@ -173,4 +177,18 @@
     justify-content: center;
     padding: 1rem;
   }
+
+@media (max-width: 768px) {
+
+    .stat-number
+    {
+      font-size: 2rem;
+    }
+
+.stats-grid {
+    grid-template-rows: auto auto auto auto;
+    grid-template-columns: 1fr 1fr;
+  }
+
+}
 </style>

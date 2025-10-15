@@ -5,6 +5,12 @@
   export let post: Post;
   export let isPaused = false;
   export let showBreakdownInfo = false;
+  export let quitGame: (() => void) | undefined = undefined;
+  export let skipRound: (() => void) | undefined = undefined;
+  export let pausesRemaining: number | undefined = undefined;
+  export let pauseLimitReached: boolean | undefined = undefined;
+  export let roundNumber: number | undefined = undefined;
+  export let totalRounds: number | undefined = undefined;
   
   let imageLoaded = false;
   let imageError = false;
@@ -120,8 +126,23 @@
   
   {#if isPaused}
     <div class="pause-overlay">
+      {#if roundNumber !== undefined}
+        <p class="round-info">Round {roundNumber}{#if totalRounds} /{totalRounds}{/if}</p>
+      {/if}
       <h2>Game Paused</h2>
-      <p class="pause-info">{3 - ($currentRound?.pauseCount || 0)} pauses remaining</p>
+      {#if pauseLimitReached}
+        <p class="pause-info">No pauses remaining</p>
+      {:else if pausesRemaining !== undefined}
+        <p class="pause-info">{pausesRemaining} {pausesRemaining === 1 ? 'pause' : 'pauses'} remaining</p>
+      {/if}
+      <div class="pause-actions">
+        {#if skipRound}
+          <button class="skip-button" on:click={skipRound}>Skip Round</button>
+        {/if}
+        {#if quitGame}
+          <button class="quit-button" on:click={quitGame}>Quit Game</button>
+        {/if}
+      </div>
     </div>
   {/if}
 </div>
@@ -221,6 +242,7 @@
     align-items: center;
     justify-content: center;
     background: var(--bg-secondary);
+    border-radius: var(--border-radius);
     color: var(--text-primary);
     z-index: 10;
     transition: opacity 0.3s ease;
@@ -236,6 +258,15 @@
     text-transform: uppercase;
   }
   
+  .round-info {
+    font-size: 1rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0 0 1rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
   .pause-info {
     font-size: 1.2rem;
     font-weight: 400;
@@ -245,6 +276,48 @@
     opacity: 0.9;
   }
   
+  .pause-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+  
+  .skip-button, .quit-button {
+    padding: 0.875rem 2rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    min-width: 140px;
+  }
+  
+  .skip-button {
+    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+    color: white;
+  }
+  
+  .skip-button:hover {
+    background: linear-gradient(135deg, #5a9eec 0%, #4588c7 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(74, 144, 226, 0.4);
+  }
+  
+  .quit-button {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+  }
+  
+  .quit-button:hover {
+    background: linear-gradient(135deg, #f15c4c 0%, #d0493b 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(231, 76, 60, 0.4);
+  }
+  
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -252,12 +325,38 @@
   
   /* Responsive sizing */
   @media (max-width: 768px) {
+    .post-viewer {
+      min-height: 300px;
+      overflow: visible;
+    }
+
+    .post-image {
+      min-height: 300px;
+      max-height: none;
+    }
+
     .pause-overlay h2 {
       font-size: 2rem;
     }
     
     .pause-info {
       font-size: 1rem;
+    }
+    
+    .pause-actions {
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+      width: 100%;
+      max-width: 300px;
+      padding: 0 1rem;
+    }
+    
+    .skip-button, .quit-button {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1rem;
+      min-width: unset;
     }
   }
 </style>

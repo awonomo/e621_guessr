@@ -9,6 +9,7 @@ export interface DatabaseConfig {
     max: number;
     idleTimeoutMillis: number;
     connectionTimeoutMillis: number;
+    timezone?: string; // Add timezone option
   };
   scoring: {
     maxPoints: number;
@@ -71,6 +72,7 @@ if (dbConfigFromUrl) {
   console.log(`   👤 User: ${process.env.DB_USER || process.env.USER || 'postgres'}`);
 }
 console.log(`   🔒 SSL: ${process.env.NODE_ENV === 'production' ? 'enabled' : 'disabled'}`);
+console.log(`   🕐 Timezone: America/Chicago (CST)`);
 console.log();
 
 export const config: DatabaseConfig = {
@@ -85,6 +87,8 @@ export const config: DatabaseConfig = {
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
+    // Set timezone to CST for all database operations
+    timezone: 'America/Chicago',
   },
   scoring: {
     maxPoints: 10000,

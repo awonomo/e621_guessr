@@ -17,11 +17,11 @@
     font-size: 1.5rem;
     margin-top: 2rem;
     margin-bottom: 2rem;
-    /* display: flex; */
+    display: flex;
     align-items: center;
     justify-content: center;
-    /* gap: 0.5rem;
-    flex-wrap: wrap; */
+    gap: 0.5rem;
+    flex-wrap: wrap;
   }
   
   .best-tag .label {
@@ -30,7 +30,7 @@
   
   .tag-name {
     font-weight: 700;
-    padding:  0.6rem;
+    padding: 0.6rem;
     margin: 0.6rem;
     border-radius: 12px;
     background: var(--bg-secondary);
@@ -46,7 +46,12 @@
     .best-tag {
       font-size: 1.25rem;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    
+    .tag-name {
+      margin: 0.25rem 0;
     }
   }
 </style>

@@ -5,6 +5,7 @@
   import { findBestScoringTag } from '../lib/utils';
   import BestTagDisplay from '../components/BestTagDisplay.svelte';
   import RoundBreakdown from '../components/RoundBreakdown.svelte';
+  import "../styles/summary-screen.css";
   
   // Calculate game statistics
   $: totalScore = $currentSession?.totalScore || 0;
@@ -57,14 +58,14 @@
   });
 </script>
 
-<div class="game-summary-screen">
+<div class="game-summary-screen summary-screen-base">
   <!-- Static Top Bar -->
   <div class="top-bar">
       <button class="icon-button home-button" on:click={returnHome} title="Return Home">
         ✕
       </button>
       <h1 class="logo-header">e621_guessr</h1>
-    <div class="flex-spacer" style="flex:1"></div>
+    <!-- <div class="flex-spacer" style="flex:1"></div> -->
     <button class="icon-button" on:click={playAgain} title="Play Again">
       ↻
     </button>
@@ -88,7 +89,9 @@
           <div class="new-best-badge">New Best!</div>
         {/if}
         
-              <h1 class="game-title">GAME:</h1>
+        {#if !isDailyChallenge}
+          <h1 class="game-title">GAME:</h1>
+        {/if}
         <div class="score-heading glowing">{totalScore.toLocaleString()}</div>
         
         {#if bestTag}
@@ -132,90 +135,9 @@
 </div>
 
 <style>
-  .game-summary-screen {
-    min-height: 100vh;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    display: flex;
-    flex-direction: column;
-    position: relative;
-  }
+  /* GameSummaryScreen-specific styles only */
   
-  /* Static Elements */
-  .top-bar {
-   display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 2rem;
-    z-index: 100;
-    flex-shrink: 0;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
-    background: var(--bg-primary);
-    border-bottom: 1px solid var(--bg-secondary);
-  }
-  
- 
-  .logo-header {
-    padding-left: 3rem;
-    text-align: left;
-    margin: 0;
-  }
-  
-
-  
-  /* Scrollable Content */
-  .content-container {
-    margin-top: 4rem;
-    height: calc(100vh - 4rem);
-    overflow-y: auto;
-    scroll-behavior: smooth;
-  }
-  
-  .summary-page {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    width: 100%;
-    background: var(--bg-primary);
-  }  /* Summary Content */
-  .summary-content {
-    text-align: center;
-    max-width: 600px;
-    width: 100%;
-  }
-
-    .game-breakdown-section {
-    width: 100%;
-  }
-
-  .breakdown-page {
-    width: 100%;
-    background: var(--bg-primary);
-    padding: 2rem 0;
-    padding-bottom: 8rem;
-  }
-
-  .round-breakdown-header {
-    text-align: center;
-    padding: 4rem 0 0 0;
-    border-top: 2px dotted var(--bg-secondary);
-  }
-  
-  .new-best-badge {
-    font-size: 1.25rem;
-    color: var(--text-accent);
-    font-weight: 700;
-    margin-bottom: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-  
+  /* Daily Challenge Header */
   .daily-challenge-header {
     text-align: center;
     margin-bottom: 2rem;
@@ -239,40 +161,27 @@
     letter-spacing: 0.05em;
   }
   
-
-  .score-heading.glowing {
-    animation: glow 2s ease-in-out infinite;
-    text-shadow: 0 0 20px rgba(252, 179, 66, 0.5);
-  }
-  
-
-  .round-title {
-    display: inline-block;
-    font-size: 2.5rem;
-    font-weight: 900;
+  /* New Best Badge */
+  .new-best-badge {
+    font-size: 1.25rem;
     color: var(--text-accent);
+    font-weight: 700;
+    margin-bottom: 1rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    margin: 0;
-    text-shadow: 0 2px 8px rgba(252, 179, 66, 0.3);
-  }
-
-  .round-score-text {
-    display: inline-block;
-    font-style: italic;
-    font-size: 2.5rem;
-    font-weight: 200;
-    color: var(--text-primary);
-    margin: 0 0 0 1rem;
-  }
-
-  .stats-summary {
-    font-size: 1.5rem;
-    color: var(--text-secondary);
-    margin-bottom: 3rem;
-    font-weight: 600;
   }
   
+  /* Game Title (above score) */
+  .game-title {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--text-secondary);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  
+  /* Action Buttons */
   .action-buttons {
     margin-bottom: 2rem;
   }
@@ -280,7 +189,7 @@
   .action-buttons button {
     margin: 1rem;
     font-size: 2rem;
-      color: var(--text-dark);
+    color: var(--text-dark);
     border: none;
     padding: 1rem 3rem;
     font-weight: 700;
@@ -293,9 +202,9 @@
     background: var(--bg-light);
   }
 
-.share-button {
-  background: var(--bg-light);
-}
+  .share-button {
+    background: var(--bg-light);
+  }
   
   .action-buttons button:hover {
     transform: scale(1.05);
@@ -304,81 +213,65 @@
   .play-again-button.daily {
     background: var(--bg-secondary);
     color: var(--text-primary);
-    animation: none;
   }
   
-  .scroll-prompt {
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-secondary);
-    font-size: 1.25rem;
+  /* Round Breakdown Headers (for scrollable list of rounds) */
+  .round-breakdown-header {
+    text-align: center;
+    padding: 4rem 0 0 0;
+    border-top: 2px dotted var(--bg-secondary);
   }
   
-  .scroll-prompt.visible {
-    opacity: 1;
+  /* Override .round-title for breakdown headers */
+  .round-breakdown-header .round-title {
+    display: inline-block;
+    font-size: 2.5rem;
+    color: var(--text-accent);
+    text-shadow: 0 2px 8px rgba(252, 179, 66, 0.3);
+  }
+
+  .round-score-text {
+    display: inline-block;
+    font-style: italic;
+    font-size: 2.5rem;
+    font-weight: 200;
+    color: var(--text-primary);
+    margin: 0 0 0 1rem;
   }
   
-  .arrow {
-    font-size: 2rem;
-    animation: bounce 2s;
+  /* Game Summary specific breakdown page styling */
+  .breakdown-page {
+    /* Override shared styles for game summary */
+    position: relative;
+    top: auto;
+    min-height: auto;
+    padding: 2rem 0;
+    padding-bottom: 8rem;
   }
   
-  /* Animations */
- @keyframes glow {
-    0%, 100% {
-      text-shadow: 0 0 20px rgba(252, 179, 66, 0.1);
-    }
-    50% {
-      text-shadow: 0 0 30px rgba(252, 179, 66, 0.3);
-    }
-  }
-  
-  @keyframes bounce {
-    0%, 20%, 50%, 80%, 100% {
-      transform: translateY(0);
-    }
-    40% {
-      transform: translateY(-10px);
-    }
-    60% {
-      transform: translateY(-5px);
-    }
+  /* Game Summary specific summary page styling */
+  .summary-page {
+    /* Override shared styles for game summary */
+    position: relative;
+    top: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
   }
   
   /* Responsive Design */
   @media (max-width: 768px) {
     .score-heading {
-      font-size: 3.5rem;
+      font-size: 3.5rem !important;
     }
     
-    .score-heading.glowing {
-      text-shadow: 
-        0 0 8px rgba(252, 179, 66, 0.8),
-        0 0 15px rgba(252, 179, 66, 0.6),
-        0 0 25px rgba(252, 179, 66, 0.4),
-        0 2px 6px rgba(252, 179, 66, 0.3);
-      transform: scale(1.03);
-    }
-    
-    .stats-summary {
-      font-size: 1.25rem;
-    }
-    
-    .play-again-button {
+    .action-buttons button {
       padding: 0.875rem 2rem;
       font-size: 1.125rem;
     }
-  }  
-  .game-title {
-    font-size: 2rem;
-    font-weight: 900;
-    color: var(--text-secondary);
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+
+    .daily-challenge-title {
+      font-size: 2rem;
+      padding-top: 7rem;
+    }
   }
 </style>
