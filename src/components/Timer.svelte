@@ -17,6 +17,9 @@
   let pausesRemaining = $derived(3 - ($currentRound?.pauseCount || 0));
   let pauseLimitReached = $derived(pausesRemaining <= 0);
   
+  // Show skip button only when pauses exhausted AND game is not currently paused
+  let showSkipButton = $derived(pauseLimitReached && !$isPaused);
+  
   // Initialize local time when round changes
   $effect(() => {
     if ($currentRound?.timeRemaining !== undefined) {
@@ -74,8 +77,8 @@
   }
   
   function handleButtonClick() {
-    if (pauseLimitReached && onSkip) {
-      // When pauses are exhausted, skip the round
+    if (showSkipButton && onSkip) {
+      // When pauses are exhausted AND game is unpaused, skip the round
       onSkip();
     } else {
       // Otherwise, toggle pause
@@ -97,10 +100,10 @@
     <button 
       class="pause-button {variant}"
       onclick={handleButtonClick}
-      title={pauseLimitReached ? 'Skip Round' : (!$isPaused ? 'Pause Game' : 'Resume Game')}
+      title={showSkipButton ? 'Skip Round' : (!$isPaused ? 'Pause Game' : 'Resume Game')}
     >
-      {#if pauseLimitReached}
-        <!-- Skip icon when no pauses remaining - U+FE0E forces text presentation -->
+      {#if showSkipButton}
+        <!-- Skip icon when no pauses remaining AND unpaused - U+FE0E forces text presentation -->
         <span class="no-emoji">⏭︎</span>
       {:else if !$isPaused}
         <!-- Pause icon - U+FE0E forces text presentation -->
