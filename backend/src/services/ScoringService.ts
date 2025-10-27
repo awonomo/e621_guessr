@@ -249,28 +249,44 @@ export class ScoringService {
       return result.rows[0];
     }
     
-    // Try fuzzy match using ILIKE
-    result = await db.query(`
-      SELECT name, category, post_count, quality,
-        CASE 
-          WHEN name ILIKE $1 THEN 1.0
-          WHEN name ILIKE '%' || $2 || '%' THEN 0.8
-          ELSE 0.6
-        END as match_score
-      FROM tags 
-      WHERE (name ILIKE $1 OR name ILIKE '%' || $2 || '%')
-      ORDER BY match_score DESC, post_count DESC
-      LIMIT 1
-    `, [`%${query}%`, query]);
+    // Try fuzzy match with stricter rules
+    // Only match if the query is a significant portion of the tag
+    const minQueryLength = 3; // Minimum length for fuzzy matching
+    const minMatchRatio = 0.5; // Query must be at least 50% of tag length
     
-    if (result.rows.length > 0 && result.rows[0].match_score >= 0.6) {
-      const row = result.rows[0];
-      return {
-        name: row.name,
-        category: row.category,
-        post_count: row.post_count,
-        quality: row.quality
-      };
+    if (query.length >= minQueryLength) {
+      result = await db.query(`
+        SELECT name, category, post_count, quality,
+          CASE 
+            -- Exact match
+            WHEN name = $1 THEN 1.0
+            -- Starts with query (e.g., "blue" matches "blue_eyes")
+            WHEN name ILIKE $1 || '%' THEN 0.9
+            -- Ends with query (e.g., "eyes" matches "blue_eyes" only if query is significant)
+            WHEN name ILIKE '%_' || $1 AND LENGTH($1)::float / LENGTH(name) >= $2 THEN 0.7
+            -- Contains as whole word with underscores (e.g., "red" in "dark_red_fur")
+            WHEN name ILIKE '%_' || $1 || '_%' AND LENGTH($1)::float / LENGTH(name) >= $2 THEN 0.6
+            ELSE 0.0
+          END as match_score
+        FROM tags 
+        WHERE 
+          name = $1 
+          OR name ILIKE $1 || '%'
+          OR (name ILIKE '%_' || $1 AND LENGTH($1)::float / LENGTH(name) >= $2)
+          OR (name ILIKE '%_' || $1 || '_%' AND LENGTH($1)::float / LENGTH(name) >= $2)
+        ORDER BY match_score DESC, post_count DESC
+        LIMIT 1
+      `, [query, minMatchRatio]);
+      
+      if (result.rows.length > 0 && result.rows[0].match_score > 0) {
+        const row = result.rows[0];
+        return {
+          name: row.name,
+          category: row.category,
+          post_count: row.post_count,
+          quality: row.quality
+        };
+      }
     }
     
     return null;

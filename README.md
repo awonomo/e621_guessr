@@ -103,17 +103,4 @@ tags are scored based on rarity sweet spots:
 - tag categories have their own minimum scores and weighted curves
 - contextual multiplier system aims to dampen and boost general tags based on patterns (tags pertaining to color for instance)
 
-## roadmap
-- create more game modes
-- add leaderboard
-- host it publicly
-- settings
-- statistics screen
-- add more tags and tag contexts to the scoring multipliers
-- UI sounds
-- UI effects for high scoring tags
-- UI response to incorrect and/or repeated guesses
-- add a share feature to game summary
-- local multiplayer with kahoot/jackbox style audience input
-
 ---

@@ -87,8 +87,7 @@ export const contexts: Contexts = {
   // Body structure tags - these are often less guessable/interesting
   'plantigrade': 1.4,
   'digitigrade': 1.3,
-  
-  // Gender/intersex tags - more challenging to guess
+  'unguligrade': 1.6,
   'intersex': 1.5,
   'andromorph': 1.5,
   'gynomorph': 3.7,
@@ -96,7 +95,7 @@ export const contexts: Contexts = {
   // Uncommon body features
   'proboscis': 3.0,
   
-  // Very common general tags that might need attenuation
+  // Very common general tags
   'looking_at_viewer': 0.6,
   'simple_background': 0.5,
   'white_background': 0.5,
@@ -105,11 +104,27 @@ export const contexts: Contexts = {
   'cum_on_own_breasts': 0.5,
   'cum_in_own_mouth': 0.7,
   'cum_on_own_face': 0.7,
-
+  'vaginal_fisting': 0.5,
+  'huge_flare': 0.5,
   'leg_fur': 0.5,
+  
   // Art style tags that are common but not very interesting to guess
   'digital_media_(artwork)': 0.7,
   'shaded': 0.8,
+
+  // tags that need boosting
+  'backsack': 6.0,
+  'simultaneous_orgasms': 4.0,
+  'spontaneous_ejaculation': 2.5,
+  'ridiculous_fit': 2.0,
+  'furry-specific_piercing': 3.0,
+
+  // funny tags
+  'furry_logic': 0.8,
+  'what': 3.0,
+  'why': 0.8,
+  'condom_transformation': 1.7,
+  'living_vehicle': 4.0,
 };
 
 /**

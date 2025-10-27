@@ -40,6 +40,10 @@
   cursor: default;
 }
 
+html {
+  overscroll-behavior-y: none;
+}
+
 body {
   margin: 0;
   padding: 0;
