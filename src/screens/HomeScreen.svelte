@@ -2,6 +2,7 @@
   import { gameActions, userStats, dailyChallenge, isLoadingDaily } from '../lib/gameStore';
   import { onMount } from 'svelte';
   import Stats from '../components/Stats.svelte';
+  import Footer from '../components/Footer.svelte';
   
   let showStats = $state(false);
   
@@ -72,6 +73,7 @@
   {#if showStats}
     <Stats onClose={toggleStats} />
   {/if}
+  <Footer />
 </div>
 
 <style>
@@ -92,6 +94,7 @@
   }
 
   .logo-header {
+  padding-left: 0rem;
   text-align: center;
   margin: 2rem 0;
 }
@@ -102,36 +105,6 @@
   color: var(--text-accent);
   font-weight: 200;
 }
-  
-  .menu {
-    width: 100%;
-    max-width: 400px;
-  }
-  
-  .menu-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .primary-button {
-    background: var(--bg-accent);
-    color: var(--bg-primary);
-    padding: 1.25rem 2rem;
-    font-size: 1.25rem;
-    font-weight: 700;
-    border-radius: var(--border-radius);
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  
-  .primary-button:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-heavy);
-  }
-
-
   
   .daily-button {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

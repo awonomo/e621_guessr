@@ -23,7 +23,6 @@
   left: 0;
   right: 0;
   background: var(--bg-primary);
-  border-bottom: 1px solid var(--bg-secondary);
 }
 
 .logo-header {
@@ -184,6 +183,10 @@
   .logo-header {
     padding-left: 0;
     text-align: center;
+  }
+
+  .top-bar {
+      border-bottom: 1px solid var(--bg-secondary);
   }
 
   .score-heading {

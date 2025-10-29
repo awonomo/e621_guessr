@@ -1,8 +1,10 @@
 /* Global styles */
 :root {
   /* Game color scheme */
-  --bg-primary: #021123;
-  --bg-secondary: #232a3a;
+  --bg-dark: #021123;
+  --bg-dark-secondary: #232a3a;
+  --bg-primary: #012e57;
+  --bg-secondary: #1f3c67;
   --bg-accent: #fcb342;
   --bg-light: #eee;
   --text-primary: #ffffff;
@@ -131,6 +133,34 @@ button:disabled {
     background: var(--text-accent);
     color: var(--bg-);
     transform: scale(1.05);
+  }
+
+    .menu {
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .primary-button {
+    background: var(--bg-accent);
+    color: var(--bg-primary);
+    padding: 1.25rem 2rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    border-radius: var(--border-radius);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .primary-button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-heavy);
   }
 
 

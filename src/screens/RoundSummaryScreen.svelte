@@ -11,25 +11,34 @@
   import RoundBreakdown from "../components/RoundBreakdown.svelte";
   import "../styles/summary-screen.css";
 
+  // Cooldown to prevent accidental advancement
+  const COOLDOWN_MS = 1500; // 1.5 seconds
+  let canAdvance = $state(false);
+
   // Calculate round statistics
-  $: roundNumber = ($currentSession?.currentRound || 0) + 1;
-  $: roundData = $currentRound;
-  $: totalTags = roundData?.post?.tags
-    ? Object.values(roundData.post.tags).flat().length
-    : 0;
-  $: guessedTags = roundData?.correctGuesses
-    ? Object.values(roundData.correctGuesses).flat().length
-    : 0;
-  $: roundScore = roundData?.score || 0;
-  $: totalGameScore = $currentSession?.totalScore || 0;
+  let roundNumber = $derived(($currentSession?.currentRound || 0) + 1);
+  let roundData = $derived($currentRound);
+  let totalTags = $derived(
+    roundData?.post?.tags
+      ? Object.values(roundData.post.tags).flat().length
+      : 0
+  );
+  let guessedTags = $derived(
+    roundData?.correctGuesses
+      ? Object.values(roundData.correctGuesses).flat().length
+      : 0
+  );
+  let roundScore = $derived(roundData?.score || 0);
+  let totalGameScore = $derived($currentSession?.totalScore || 0);
 
   // Find best scoring tag
-  $: bestTag = findBestScoringTag();
+  let bestTag = $derived(findBestScoringTag());
 
   // Check if there are any tags to show in breakdown
-  $: hasTagsToShow =
+  let hasTagsToShow = $derived(
     $currentRound?.post?.tags &&
-    Object.values($currentRound.post.tags).flat().length > 0;
+      Object.values($currentRound.post.tags).flat().length > 0
+  );
 
   function findBestScoringTag() {
     if (!roundData?.correctGuesses) return null;
@@ -61,11 +70,14 @@
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === "Enter") {
       event.preventDefault();
-      nextRound();
+      if (canAdvance) {
+        nextRound();
+      }
     }
   }
 
   function nextRound() {
+    if (!canAdvance) return;
     gameActions.nextRound();
   }
 
@@ -76,8 +88,15 @@
   }
 
   onMount(() => {
+    // Start cooldown timer
+    const cooldownTimer = setTimeout(() => {
+      canAdvance = true;
+    }, COOLDOWN_MS);
+
     document.addEventListener("keydown", handleKeydown);
+    
     return () => {
+      clearTimeout(cooldownTimer);
       document.removeEventListener("keydown", handleKeydown);
     };
   });
@@ -88,7 +107,7 @@
   <div class="top-bar">
     <button
       class="icon-button quit-button"
-      on:click={quitGame}
+      onclick={quitGame}
       title="Quit Game"
     >
       ✕
@@ -99,7 +118,7 @@
     <h1 class="round-title next">next</h1>
     <button
       class="icon-button next-button"
-      on:click={nextRound}
+      onclick={nextRound}
       title="Next Round"
     >
       {#if $canAdvanceRound}

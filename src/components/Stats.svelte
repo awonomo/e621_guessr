@@ -76,7 +76,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -97,7 +97,6 @@
     align-items: center;
     margin-bottom: 2rem;
   }
-
   .modal-header h2 {
     margin: 0;
   }
@@ -118,15 +117,13 @@
   .stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: 0.5fr 0.5fr;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0rem;
   }
-
-  
   .stat-card {
     background: var(--bg-primary);
-    padding: 1.5rem;
+    padding: 1rem;
     border-radius: var(--border-radius);
     text-align: center;
   }
@@ -134,7 +131,7 @@
     font-size: 3rem;
     font-weight: 700;
     color: var(--text-accent);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0rem;
   }
   .stat-label {
     color: var(--text-secondary);

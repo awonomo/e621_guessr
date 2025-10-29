@@ -16,6 +16,7 @@
   let isSubmitting = $state(false);
   let recentGuesses = $state<string[]>([]);
   let isShaking = $state(false);
+  let isGlowing = $state(false);
   
   // Command history navigation state  
   let commandHistory = $state<string[]>([]);
@@ -94,6 +95,11 @@
       // Check if the guess was incorrect (assuming result has isCorrect property)
       if (result && result.isCorrect === false) {
         triggerShake();
+      }
+      
+      // Check if the guess was correct
+      if (result && result.isCorrect === true) {
+        triggerGlow();
       }
       
       // Only clear input and add to history for valid guesses
@@ -175,6 +181,13 @@
     }, 600); // Duration of shake animation
   }
   
+  function triggerGlow() {
+    isGlowing = true;
+    setTimeout(() => {
+      isGlowing = false;
+    }, 800); // Duration of glow animation
+  }
+  
   function showFeedback(message: string, type: 'success' | 'warning' | 'error') {
     // Create temporary feedback element
     const feedback = document.createElement('div');
@@ -220,7 +233,7 @@
 
 <div class="guess-input-container" class:disabled class:shaking={isShaking}>
   <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="guess-form">
-    <div class="input-wrapper">
+    <div class="input-wrapper" class:glowing={isGlowing}>
       <input
         bind:this={inputElement}
         bind:value={inputValue}
@@ -279,6 +292,8 @@
   .guess-input-container.shaking {
     animation: shake 0.6s ease-in-out;
   }
+
+
   
   .guess-form {
     display: flex;
@@ -303,6 +318,10 @@
     box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4),
                 0 0 0 4px rgba(var(--accent-primary-rgb), 0.2);
     transform: translateY(-2px);
+  }
+  
+  .input-wrapper.glowing {
+    animation: successGlow 0.5s ease-out;
   }
   
   .guess-input {
@@ -401,6 +420,18 @@
     0%, 100% { transform: translateX(0); }
     10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
     20%, 40%, 60%, 80% { transform: translateX(8px); }
+  }
+  
+  @keyframes successGlow {
+    0% {
+      background: var(--bg-light);
+    }
+    50% {
+      background: rgb(67, 203, 115);
+    }
+    100% {
+      background: var(--bg-light);
+    }
   }
   
   /* Mobile adjustments */

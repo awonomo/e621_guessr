@@ -10,6 +10,7 @@
   import RoundSummaryScreen from './screens/RoundSummaryScreen.svelte';
   import GameSummaryScreen from './screens/GameSummaryScreen.svelte';
   import AgeVerificationModal from './components/AgeVerificationModal.svelte';
+  import Footer from './components/Footer.svelte';
   
   // Age verification state using runes
   let showAgeVerification = $state(false);

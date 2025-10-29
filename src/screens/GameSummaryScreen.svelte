@@ -6,6 +6,7 @@
   import BestTagDisplay from '../components/BestTagDisplay.svelte';
   import RoundBreakdown from '../components/RoundBreakdown.svelte';
   import "../styles/summary-screen.css";
+  import Footer from '../components/Footer.svelte';
   
   // Calculate game statistics
   $: totalScore = $currentSession?.totalScore || 0;
@@ -132,6 +133,7 @@
         <RoundBreakdown roundData={round} roundNumber={index + 1} />
       </div>
     {/each}
+    <Footer />
 </div>
 
 <style>

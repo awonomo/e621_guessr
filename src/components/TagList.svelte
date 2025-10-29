@@ -43,8 +43,6 @@
     }
   });
   
-
-  
   function scrollToNewTag() {
     if (containerElement && tagEntries.length > 0) {
       // Scroll to top to show the most recent tag
