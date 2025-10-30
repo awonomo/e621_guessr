@@ -2,7 +2,15 @@
   import BestTagDisplay from './BestTagDisplay.svelte';
   import { userStats } from '../lib/gameStore';
   export let onClose: () => void;
+  
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      onClose();
+    }
+  }
 </script>
+
+<svelte:window on:keydown={handleKeydown} />
 
 <div 
   class="modal-overlay" 
@@ -81,6 +89,7 @@
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    animation: fadeIn 0.2s ease-out;
   }
   .modal {
     background: var(--bg-secondary);
@@ -90,6 +99,8 @@
     max-width: 600px;
     max-height: 80vh;
     overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.2s ease-out;
   }
   .modal-header {
     display: flex;
@@ -173,6 +184,15 @@
     align-items: center;
     justify-content: center;
     padding: 1rem;
+  }
+
+    @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
 @media (max-width: 768px) {

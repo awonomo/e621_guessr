@@ -227,4 +227,210 @@ testCommand
     }
   });
 
+// Posts management commands
+const postsCommand = program
+  .command('posts')
+  .description('Post fetching and management commands');
+
+postsCommand
+  .command('fetch-ids <ids...>')
+  .description('Fetch posts from e621 by their IDs')
+  .option('-o, --output <file>', 'Save JSON to file instead of console')
+  .option('--skip-blacklist', 'Skip blacklist validation')
+  .action(async (ids: string[], options: { output?: string; skipBlacklist?: boolean }) => {
+    try {
+      console.log(`\n🔍 Fetching ${ids.length} posts from e621...\n`);
+      
+      const { readFileSync } = await import('fs');
+      const { join } = await import('path');
+      const packageJson = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'));
+      const E621_USER_AGENT = `e621_guessr/${packageJson.version} (https://github.com/awonomo/e621_guessr)`;
+      
+      const posts: any[] = [];
+      const errors: Array<{ id: string | number; error: string }> = [];
+      
+      for (const id of ids) {
+        try {
+          const postId = parseInt(id);
+          if (isNaN(postId)) {
+            errors.push({ id, error: 'Invalid post ID (not a number)' });
+            continue;
+          }
+          
+          console.log(`   Fetching post ${postId}...`);
+          
+          const response = await fetch(`https://e621.net/posts/${postId}.json`, {
+            headers: { 'User-Agent': E621_USER_AGENT }
+          });
+          
+          if (!response.ok) {
+            errors.push({ id: postId, error: `HTTP ${response.status}` });
+            continue;
+          }
+          
+          const data = await response.json();
+          
+          if (!data.post) {
+            errors.push({ id: postId, error: 'Post not found' });
+            continue;
+          }
+          
+          const post = data.post;
+          
+          // Validate post has enough tags
+          const tagCount = Object.values(post.tags).flat().length;
+          if (tagCount < 50) {
+            console.log(`   ⚠️  Post ${postId} only has ${tagCount} tags (recommended: 50+)`);
+          }
+          
+          // Check blacklist if not skipped
+          if (!options.skipBlacklist) {
+            const { checkPostAgainstBlacklist } = await import('./utils/blacklist.js');
+            const blacklistResult = await db.query('SELECT tag FROM daily_blacklist_tags');
+            const blacklistedTags = blacklistResult.rows.map((row: { tag: string }) => row.tag);
+            
+            if (!checkPostAgainstBlacklist(post, blacklistedTags)) {
+              console.log(`   ⚠️  Post ${postId} contains blacklisted tags`);
+            }
+          }
+          
+          posts.push(post);
+          console.log(`   ✅ Post ${postId} fetched successfully (${tagCount} tags)`);
+          
+        } catch (error) {
+          errors.push({ id, error: error instanceof Error ? error.message : 'Unknown error' });
+        }
+      }
+      
+      console.log(`\n📊 Results: ${posts.length} posts fetched, ${errors.length} errors\n`);
+      
+      if (errors.length > 0) {
+        console.log('❌ Errors:');
+        errors.forEach(err => console.log(`   Post ${err.id}: ${err.error}`));
+        console.log();
+      }
+      
+      const output = JSON.stringify(posts, null, 2);
+      
+      if (options.output) {
+        const { writeFileSync } = await import('fs');
+        const { resolve } = await import('path');
+        const outputPath = resolve(options.output);
+        writeFileSync(outputPath, output);
+        console.log(`💾 Saved to: ${outputPath}`);
+      } else {
+        console.log('📋 JSON Output:\n');
+        console.log(output);
+      }
+      
+      await db.close();
+      process.exit(errors.length > 0 ? 1 : 0);
+    } catch (error) {
+      console.error('Failed to fetch posts:', error);
+      await db.close();
+      process.exit(1);
+    }
+  });
+
+postsCommand
+  .command('fetch-criteria <criteria>')
+  .description('Fetch 5 random posts from e621 matching custom criteria')
+  .option('-n, --count <number>', 'Number of posts to fetch', '5')
+  .option('-o, --output <file>', 'Save JSON to file instead of console')
+  .option('--skip-blacklist', 'Skip blacklist validation')
+  .action(async (criteria: string, options: { count?: string; output?: string; skipBlacklist?: boolean }) => {
+    try {
+      const count = parseInt(options.count || '5');
+      console.log(`\n🔍 Fetching ${count} posts matching: "${criteria}"\n`);
+      
+      const { readFileSync } = await import('fs');
+      const { join } = await import('path');
+      const packageJson = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'));
+      const E621_USER_AGENT = `e621_guessr/${packageJson.version} (https://github.com/awonomo/e621_guessr)`;
+      
+      const posts: any[] = [];
+      const maxAttempts = count * 10; // Allow 10 attempts per needed post
+      let attempts = 0;
+      
+      // Add recommended filters to criteria
+      const enhancedCriteria = `${criteria} -animated tagcount:>=50`;
+      console.log(`   Using query: ${enhancedCriteria}\n`);
+      
+      while (posts.length < count && attempts < maxAttempts) {
+        attempts++;
+        
+        try {
+          const apiUrl = `https://e621.net/posts.json?tags=${encodeURIComponent(enhancedCriteria)}&limit=1`;
+          const response = await fetch(apiUrl, {
+            headers: { 'User-Agent': E621_USER_AGENT }
+          });
+          
+          if (!response.ok) {
+            throw new Error(`E621 API error: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          
+          if (!data.posts || data.posts.length === 0) {
+            console.log('   No more posts found matching criteria');
+            break;
+          }
+          
+          const post = data.posts[0];
+          
+          // Check if we already have this post
+          if (posts.some(p => p.id === post.id)) {
+            continue;
+          }
+          
+          // Check blacklist if not skipped
+          let passesBlacklist = true;
+          if (!options.skipBlacklist) {
+            const { checkPostAgainstBlacklist } = await import('./utils/blacklist.js');
+            const blacklistResult = await db.query('SELECT tag FROM daily_blacklist_tags');
+            const blacklistedTags = blacklistResult.rows.map((row: { tag: string }) => row.tag);
+            passesBlacklist = checkPostAgainstBlacklist(post, blacklistedTags);
+          }
+          
+          if (passesBlacklist || options.skipBlacklist) {
+            const tagCount = Object.values(post.tags).flat().length;
+            posts.push(post);
+            console.log(`   ✅ Post ${post.id} (${tagCount} tags) - ${posts.length}/${count}`);
+          } else {
+            console.log(`   ⚠️  Post ${post.id} contains blacklisted tags (skipped)`);
+          }
+          
+        } catch (error) {
+          console.error('   Error fetching post:', error instanceof Error ? error.message : error);
+        }
+      }
+      
+      console.log(`\n📊 Results: ${posts.length} posts fetched in ${attempts} attempts\n`);
+      
+      if (posts.length < count) {
+        console.log(`⚠️  Warning: Only found ${posts.length}/${count} posts\n`);
+      }
+      
+      const output = JSON.stringify(posts, null, 2);
+      
+      if (options.output) {
+        const { writeFileSync } = await import('fs');
+        const { resolve } = await import('path');
+        const outputPath = resolve(options.output);
+        writeFileSync(outputPath, output);
+        console.log(`💾 Saved to: ${outputPath}`);
+      } else {
+        console.log('📋 JSON Output:\n');
+        console.log(output);
+      }
+      
+      await db.close();
+      process.exit(posts.length > 0 ? 0 : 1);
+    } catch (error) {
+      console.error('Failed to fetch posts:', error);
+      await db.close();
+      process.exit(1);
+    }
+  });
+
 program.parse();

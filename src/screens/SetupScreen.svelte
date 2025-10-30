@@ -84,8 +84,11 @@
   
   // Validation effects
   $effect(() => {
-    if (timeLimit < 10) timeLimit = 10;
-    if (timeLimit > 600) timeLimit = 600;
+    // Allow -1 for untimed mode
+    if (timeLimit !== -1) {
+      if (timeLimit < 10) timeLimit = 10;
+      if (timeLimit > 600) timeLimit = 600;
+    }
     if (minUpvotes > 2000) minUpvotes = 2000;
   });
 
@@ -229,7 +232,6 @@
                 class:selected={option === timeLimit}
                 onclick={() => {
                   timeLimit = option;
-                  // if (option === -1) gameMode = 'endless'; // Not wired up yet
                 }}
               >
                 {option === 30 ? '30s' : option === 60 ? '60s' : option === 120 ? '2m' : option === 300 ? '5m' : '∞'}
@@ -247,7 +249,7 @@
           <select id="gameMode" bind:value={gameMode}>
             <option value="classic">Classic - Tag Guessing</option>
             <option value="timeAttack">Time Attack (Coming Soon)</option>
-            <option value="endless">Endless Mode (Coming Soon)</option>
+            <option value="popularity">Popularity (Coming Soon)</option>
           </select>
         </div>
 

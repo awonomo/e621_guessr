@@ -56,8 +56,26 @@
   // Pause count for showing skip button on pause overlay
   let pausesRemaining = $derived(3 - ($currentRound?.pauseCount || 0));
   let pauseLimitReached = $derived(pausesRemaining <= 0);
+  
+  function handleKeydown(e: KeyboardEvent) {
+    if (!$isGameActive) return;
+    
+    // Escape to pause/unpause
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      togglePause();
+    }
+    
+    // Shift+Enter to skip round
+    if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault();
+      skipRound();
+    }
+  }
 
 </script>
+
+<svelte:window on:keydown={handleKeydown} />
 
 <div class="gameplay-screen">
   <!-- Top UI Bar (Desktop only) -->
@@ -79,7 +97,6 @@
     <h2 class="round-title">Round {($currentSession?.currentRound || 0) + 1}</h2>
     
     <!-- Desktop: Timer -->
-    {#if $currentSession?.settings.mode !== 'endless'}
       <div class="timer-area">
         <Timer 
           onTimeUp={handleTimeUp}
@@ -88,7 +105,6 @@
           variant="desktop"
         />
       </div>
-    {/if}
     
     <!-- Mobile: Timer and Score Row -->
     <div class="mobile-header">

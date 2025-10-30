@@ -25,6 +25,10 @@
   background: var(--bg-primary);
 }
 
+.top-bar-summary {
+  border-bottom: 1px solid var(--bg-secondary);
+}
+
 .logo-header {
   padding-left: 3rem;
   text-align: left;

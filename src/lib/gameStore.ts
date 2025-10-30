@@ -1,4 +1,11 @@
-// Simple state management without Svelte 5 runes for now
+// gameStore is the big daddy state management module !
+// This is what is contains:
+// appState is the main Svelte store containing the state of the entire game – it cannot be accessed directly by other components
+// gameActions are global methods that other components can use to manipulate the game state
+// derived stores are views into appState that other components can also use to know what the current state is
+// Public helper functions - utilities any component can use
+// Private helper functions - functions used internally
+
 import { writable, derived, get } from 'svelte/store';
 import { 
   type GameState, 
@@ -15,6 +22,9 @@ import {
 } from './types.js';
 import backendApi from './backendApi.js';
 
+// PRIVATE HELPER FUNCTIONS - used by other functions in this file
+
+// Session ID Generation - used in startGame
 // Polyfill for crypto.randomUUID() for older browsers (especially mobile Safari)
 function generateUUID(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -29,7 +39,7 @@ function generateUUID(): string {
   });
 }
 
-// Player ID management
+// Player ID creation, used for daily challenge
 function getOrCreatePlayerId(): string {
   let playerId = localStorage.getItem('playerId');
   if (!playerId) {
@@ -39,7 +49,7 @@ function getOrCreatePlayerId(): string {
   return playerId;
 }
 
-// Create writable stores
+// APPSTATE - writeable store (Svelte object) containing reactive data, private
 const appState = writable<AppState>({
   currentState: 'home',
   currentSession: null,
@@ -65,7 +75,7 @@ const appState = writable<AppState>({
   }
 });
 
-// Derived stores for easy access
+// DERIVED STORES - read-only views into appState, exported
 export const currentState = derived(appState, $state => $state.currentState);
 export const currentSession = derived(appState, $state => $state.currentSession);
 export const dailyChallenge = derived(appState, $state => $state.dailyChallenge);
@@ -92,7 +102,7 @@ export const isLastRound = derived(appState, $state => {
   return $state.currentSession.currentRound === $state.currentSession.rounds.length - 1;
 });
 
-// Action functions
+// GAMEACTIONS – contains global game methods
 export const gameActions = {
   navigateToHome() {
     appState.update(state => {
@@ -116,10 +126,13 @@ export const gameActions = {
     const sessionId = generateUUID();
     const now = new Date();
     
+    // For untimed mode, use Infinity so time never runs out
+    const initialTime = settings.timeLimit === -1 ? Infinity : settings.timeLimit;
+    
     const rounds: RoundData[] = posts.slice(0, settings.totalRounds).map(post => ({
       post,
       timeLimit: settings.timeLimit,
-      timeRemaining: settings.timeLimit,
+      timeRemaining: initialTime,
       correctGuesses: {},
       totalGuesses: 0,
       incorrectGuesses: 0,
@@ -184,6 +197,7 @@ export const gameActions = {
     });
   },
 
+  // submitGuess - main guess processing function
   async submitGuess(guess: string): Promise<GuessResult> {
     const state = get(appState);
     const session = state.currentSession;
@@ -201,14 +215,13 @@ export const gameActions = {
 
     const normalizedGuess = guess.toLowerCase().trim();
     
-    // Check if guess matches custom criteria (blocked tags) - before aliasing
+    // Custom criteria check - prevents players from guessing tags they input themselves in the game setup
     if (session.settings.customCriteria) {
       const customCriteriaTags = session.settings.customCriteria
         .split(/\s+/)
         .map(tag => tag.trim().toLowerCase().replace(/\s+/g, '_'))
         .filter(tag => tag.length > 0);
       
-      // Direct match check
       if (customCriteriaTags.includes(normalizedGuess)) {
         return { 
           guess, 
@@ -219,7 +232,7 @@ export const gameActions = {
       }
     }
     
-    // Rate limiting check - more lenient: 6 incorrect guesses in 15 seconds
+    // Rate limiting: allow 6 incorrect guesses in 15 seconds
     const now = Date.now();
     const fifteenSecondsAgo = now - 15000;
     const recentIncorrectGuesses = round.incorrectGuessTimestamps.filter(timestamp => timestamp > fifteenSecondsAgo);
@@ -234,7 +247,7 @@ export const gameActions = {
       };
     }
 
-    // Step 1: Check if guess matches any tag on the post
+    // submitGuess STEP 1: Check if guess matches any tag on the post
     let matchedTag: string | null = null;
     let matchedCategory: TagCategory | undefined;
     
@@ -249,14 +262,17 @@ export const gameActions = {
     }
 
     if (!matchedTag) {
-      // Step 2: No direct match - check if guess resolves to a tag on this post via alias
-      
+     
+      // submitGuess STEP 2: No direct match - check if a guess resolves to a tag via tag aliases
+
       try {
-        // Resolve the guess to its canonical tag name (if it's an alias)
+        // check if the guess can be resolved
         const resolvedTag = await backendApi.resolveTag(normalizedGuess);
         
+        // it can!
         if (resolvedTag) {
-          // Check if resolved tag is blocked by custom criteria
+          // Custom criteria check after aliasing
+          // prevents players from guessing aliases of tags they input themselves in the game setup
           if (session.settings.customCriteria) {
             const customCriteriaTags = session.settings.customCriteria
               .split(/\s+/)
@@ -277,20 +293,21 @@ export const gameActions = {
           for (const [cat, tags] of Object.entries(round.post.tags)) {
             const tagCategory = cat as TagCategory;
             
+            //the resolved tag is matched on the current post!
             if (tags.some(tag => tag.toLowerCase() === resolvedTag.toLowerCase())) {
               matchedTag = resolvedTag;
               matchedCategory = tagCategory;
               
-              // Now score the confirmed tag
+              // Now score the resolved tag
               const backendResult = await backendApi.scoreTag(resolvedTag);
               if (backendResult && backendResult.isCorrect) {
                 
-                // Mark this as an alias match with slight point deduction
+                // Remember this guess as an alias match with slight point deduction
                 const aliasResult = await this.processCorrectGuess(
                   guess, 
                   matchedTag, 
                   matchedCategory, 
-                  backendResult.score * 0.9, // 10% deduction for alias
+                  backendResult.score * 0.9, // 10% deduction for aliased guess
                   true // wasFromAlias
                 );
                 
@@ -306,7 +323,7 @@ export const gameActions = {
         console.warn('[GameStore] Alias resolution failed:', error);
       }
       
-      // Step 3: No match found - record as incorrect
+      // submitGuess STEP 3: No match found - record as incorrect
       return this.processIncorrectGuess(guess);
     }
 
@@ -323,7 +340,9 @@ export const gameActions = {
                (entry.actualTag && entryActualTagLower === matchedTagLower);
       }
     );
-    
+    // Redundant guesses return early - NOT using processIncorrectGuess
+    // this avoids conflict with existing correct guesses
+    // we want to ignore redundant guesses, not process them as incorrect !
     if (alreadyGuessed) {
       return { 
         guess, 
@@ -332,7 +351,7 @@ export const gameActions = {
       };
     }
 
-    // Step 4: Valid new guess - get score from backend
+    // submitGuess STEP 4: Valid new guess! - get score from backend
     try {
       const backendResult = await backendApi.scoreTag(matchedTag);
       const score = backendResult?.score || this.fallbackScore(matchedTag, matchedCategory!);
@@ -456,8 +475,8 @@ export const gameActions = {
     };
   },
 
+  // Fallback scoring if backend is unavailable - remember to tune this to mimic the real scoring alg
   fallbackScore(tag: string, category: TagCategory): number {
-    // Fallback scoring if backend is unavailable - matches new backend range
     const categoryBasePoints = {
       general: 1200, // 120 * 10 to match backend scaling
       artist: 600,   // Artists get lower base (0.6 weight)
@@ -551,6 +570,7 @@ export const gameActions = {
     });
   },
 
+  // GAME PAUSING
   togglePause() {
     appState.update(state => {
       if (state.currentState !== 'playing') {
@@ -599,26 +619,21 @@ export const gameActions = {
     });
   },
 
+  // TIMER UPDATE - called every second during timed gameplay, calls endRound when time runs out
   updateTimeRemaining(timeRemaining: number) {
     appState.update(state => {
       if (!state.currentSession) return state;
-      
       const round = state.currentSession.rounds[state.currentSession.currentRound];
       if (!round) return state;
 
       round.timeRemaining = timeRemaining;
-      
-      if (timeRemaining <= 0) {
-        round.endedAt = new Date();
-        
-        return {
-          ...state,
-          currentState: 'roundSummary'
-        };
-      }
-      
-      return state;
+       return state;
     });
+
+      // if time runs out, end the round
+      if (timeRemaining <= 0) {
+        this.endRound();
+      }
   },
 
   updateSettings(newSettings: Partial<AppState['settings']>) {
@@ -929,7 +944,7 @@ export const gameActions = {
   }
 };
 
-// Helper functions
+// Helper functions - functions used internally
 function updateUserStats(state: AppState, session: GameSession) {
   const stats = state.userStats;
   stats.gamesPlayed++;
@@ -961,7 +976,7 @@ function updateUserStats(state: AppState, session: GameSession) {
   }
 }
 
-// Persistence
+// Persistence helper functions are exported
 export function saveToStorage() {
   try {
     const playerId = getOrCreatePlayerId();

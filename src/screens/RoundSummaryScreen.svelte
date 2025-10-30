@@ -104,7 +104,7 @@
 
 <div class="round-summary-screen summary-screen-base">
   <!-- Static Top Bar -->
-  <div class="top-bar">
+  <div class="top-bar top-bar-summary">
     <button
       class="icon-button quit-button"
       onclick={quitGame}

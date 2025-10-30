@@ -5,8 +5,8 @@
   import { findBestScoringTag } from '../lib/utils';
   import BestTagDisplay from '../components/BestTagDisplay.svelte';
   import RoundBreakdown from '../components/RoundBreakdown.svelte';
+  import ShareResults from '../components/ShareResults.svelte';
   import "../styles/summary-screen.css";
-  import Footer from '../components/Footer.svelte';
   
   // Calculate game statistics
   $: totalScore = $currentSession?.totalScore || 0;
@@ -20,6 +20,17 @@
   // Find best scoring tag across all rounds
   $: bestTag = findBestScoringTag(rounds);
   $: isDailyChallenge = $currentSession?.settings.mode === 'daily';
+  $: isUntimedGame = $currentSession?.settings.timeLimit === -1;
+  
+  // Format time limit for display
+  $: timeLimitDisplay = (() => {
+    if (!$currentSession) return '';
+    const timeLimit = $currentSession.settings.timeLimit;
+    if (timeLimit === -1) return 'Untimed';
+    const minutes = Math.floor(timeLimit / 60);
+    const seconds = timeLimit % 60;
+    return seconds > 0 ? `${minutes}:${String(seconds).padStart(2, '0')}` : `${minutes}m`;
+  })();
   
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === 'Enter') {
@@ -39,10 +50,15 @@
     gameActions.restartWithSameSettings();
   }
   
-  function shareResults() {
-    // TODO: Implement sharing functionality
-    console.log('Share functionality to be implemented');
-  }
+  // Get daily date formatted as MM.DD.YY for share text
+  $: dailyDateFormatted = (() => {
+    if (!isDailyChallenge) return null;
+    const date = new Date();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
+    return `${month}.${day}.${year}`;
+  })();
   
   onMount(() => {
     document.addEventListener('keydown', handleKeydown);
@@ -61,7 +77,7 @@
 
 <div class="game-summary-screen summary-screen-base">
   <!-- Static Top Bar -->
-  <div class="top-bar">
+  <div class="top-bar top-bar-summary">
       <button class="icon-button home-button" on:click={returnHome} title="Return Home">
         ✕
       </button>
@@ -92,6 +108,11 @@
         
         {#if !isDailyChallenge}
           <h1 class="game-title">GAME:</h1>
+          <div class="game-info">
+            <span class="info-badge" class:untimed={isUntimedGame}>
+              {timeLimitDisplay}{isUntimedGame ? '' : '/round'}
+            </span>
+          </div>
         {/if}
         <div class="score-heading glowing">{totalScore.toLocaleString()}</div>
         
@@ -113,7 +134,13 @@
               again
             </button>
           {/if}
-          <button class="share-button" title="share score" on:click={shareResults}>share</button>
+          {#if $currentSession}
+            <ShareResults 
+              session={$currentSession} 
+              isDaily={isDailyChallenge}
+              dailyDate={dailyDateFormatted}
+            />
+          {/if}
         </div>
         
         <div class="scroll-prompt" class:visible={rounds.length > 0}>
@@ -133,7 +160,6 @@
         <RoundBreakdown roundData={round} roundNumber={index + 1} />
       </div>
     {/each}
-    <Footer />
 </div>
 
 <style>
@@ -152,6 +178,7 @@
     margin: 0 0 0.5rem 0;
     text-transform: uppercase;
     letter-spacing: 0.1em;
+    padding-top: 7rem;
   }
   
   .daily-challenge-date {
@@ -183,6 +210,29 @@
     letter-spacing: 0.1em;
   }
   
+  /* Game Info (time limit display) */
+  .game-info {
+    margin: 0.5rem 0 1rem 0;
+  }
+  
+  .info-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: var(--bg-secondary);
+    border: 2px solid var(--accent-primary);
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  .info-badge.untimed {
+    border-color: var(--text-accent);
+    color: var(--text-accent);
+  }
+  
   /* Action Buttons */
   .action-buttons {
     margin-bottom: 2rem;
@@ -201,10 +251,6 @@
   }
   
   .play-again-button {
-    background: var(--bg-light);
-  }
-
-  .share-button {
     background: var(--bg-light);
   }
   

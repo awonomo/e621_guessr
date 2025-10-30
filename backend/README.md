@@ -101,6 +101,11 @@ npm run cli db reset   # Reset database (dev only)
 npm run tags:refresh   # Download latest tag data
 npm run cli tags search "tag_name"  # Search for specific tag
 
+# Post fetching (for manual daily challenge curation)
+npm run cli -- posts fetch-ids 12345 67890 11111 22222 33333  # Fetch by specific IDs
+npm run cli -- posts fetch-criteria "halloween solo -animated score:>=400"  # Fetch by criteria
+npm run cli -- posts fetch-criteria "halloween" --count 10 --output halloween.json  # Save to file
+
 # Daily challenge management
 # Clear specific date's daily challenge (replace date as needed)
 psql -d e621_guessr -c "DELETE FROM daily_results WHERE date = '2025-10-08'; DELETE FROM daily_challenges WHERE date = '2025-10-08';"

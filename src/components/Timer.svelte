@@ -13,6 +13,9 @@
   let localTimeRemaining = $state(0);
   let previousState: string | undefined;
   
+  // Check if current game is untimed
+  let isUntimedMode = $derived($currentSession?.settings.timeLimit === -1);
+  
   // Calculate pauses remaining
   let pausesRemaining = $derived(3 - ($currentRound?.pauseCount || 0));
   let pauseLimitReached = $derived(pausesRemaining <= 0);
@@ -27,8 +30,8 @@
     }
   });
   
-  // Check if we're in warning zone (last 10 seconds)
-  let isWarningZone = $derived(localTimeRemaining <= 10 && localTimeRemaining > 0);
+  // Check if we're in warning zone (last 10 seconds) - but not in untimed mode
+  let isWarningZone = $derived(!isUntimedMode && localTimeRemaining <= 10 && localTimeRemaining > 0);
   
   // Start pulse animation in warning zone
   let pulseAnimation = $derived(isWarningZone);
@@ -51,8 +54,12 @@
       timerId = undefined;
     }
     
-    // Start timer only when all conditions are met
-    const shouldRunTimer = $currentState === 'playing' && !$isPaused && localTimeRemaining > 0;
+    // Start timer only when all conditions are met (and not in untimed mode)
+    const shouldRunTimer = 
+      $currentState === 'playing' && 
+      !$isPaused && 
+      localTimeRemaining > 0 &&
+      !isUntimedMode;  // Don't run timer in untimed mode
     
     if (shouldRunTimer) {
       timerId = setInterval(() => {
@@ -71,6 +78,10 @@
   });
 
   function formatTime(seconds: number): string {
+    // Handle Infinity or untimed mode (check both -1 and Infinity)
+    if (!isFinite(seconds) || seconds === -1 || isUntimedMode) {
+      return '∞';
+    }
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${minutes}:${secs.toString().padStart(2, '0')}`;

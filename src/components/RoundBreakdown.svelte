@@ -146,7 +146,6 @@
     <div class="post-section">
       <PostViewer post={roundData.post} showBreakdownInfo={true} />
     </div>
-    
     <div class="tags-section">
       {#if isLoadingScores}
         <div class="loading-indicator">
@@ -170,10 +169,12 @@
               {#each tags.sort((a, b) => getTagScore(b.tag, b.originalCategory) - getTagScore(a.tag, a.originalCategory)) as tagInfo}
                 {@const points = getTagScore(tagInfo.tag, tagInfo.originalCategory)}
                 {@const wasGuessed = isTagGuessed(tagInfo.tag, tagInfo.originalCategory)}
-                <div class="tag-base tag-{tagInfo.originalCategory}" class:tag-guessed={wasGuessed}>
-                  <span class="tag-name">{tagInfo.tag}</span>
-                  <span class="tag-points">+{points}</span>
-                </div>
+                <a href="https://e621.net/wiki_pages/show_or_new?title={tagInfo.tag}" target="_blank" class="tag-link">
+                  <div class="tag-base tag-{tagInfo.originalCategory}" class:tag-guessed={wasGuessed}>
+                    <span class="tag-name">{tagInfo.tag}</span>
+                    <span class="tag-points">+{points}</span>
+                  </div>
+                </a>
               {/each}
             </div>
           </div>
@@ -210,7 +211,6 @@
   .post-section {
     width: 100%;
     margin-bottom: 3rem;
-    cursor: pointer;
   }
   
   .tags-section {
@@ -237,6 +237,12 @@
     flex-wrap: wrap;
     gap: 0.75rem;
   }
+
+  .tag-link {
+    text-decoration: none;
+    color: inherit;
+    display: inline-block;
+  }
   
   .tag-base {
     /* Override shared styles for breakdown grid layout */
@@ -247,11 +253,16 @@
     background: var(--bg-secondary);
   }
 
+  .tag-base * {
+    cursor: pointer;
+  }
+
   .tag-base:hover {
-    transform: scale(1.33);
+    transform: scale(1.2);
     color: var(--text-accent) !important;
     border-color: var(--text-accent) !important;
     box-shadow: 0px 0px 8px rgba(252, 179, 66, 0.5);
+    cursor: pointer;
   }
   
   .tag-guessed {

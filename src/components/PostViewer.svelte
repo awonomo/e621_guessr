@@ -200,6 +200,7 @@
     font-size: 0.875rem;
     font-weight: 600;
     z-index: 5;
+    cursor: pointer;
   }
   
   .loading-state {

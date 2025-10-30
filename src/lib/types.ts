@@ -28,11 +28,16 @@ export type TagCategory =
 
 export interface GameSettings {
   mode: GameMode;
-  timeLimit: number; // seconds per round
+  timeLimit: number; // seconds per round, -1 for untimed
   totalRounds: number;
   ratings: Rating[];
   minUpvotes: number;
   customCriteria: string;
+}
+
+// Helper function to check if a game is untimed
+export function isUntimed(settings: GameSettings | null | undefined): boolean {
+  return settings?.timeLimit === -1;
 }
 
 export interface Post {
