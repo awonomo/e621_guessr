@@ -71,13 +71,18 @@
     if (event.key === "Enter") {
       event.preventDefault();
       if (canAdvance) {
-        nextRound();
+        nextRoundWithEnter();
       }
     }
   }
 
-  function nextRound() {
+  function nextRoundWithEnter() {
     if (!canAdvance) return;
+    gameActions.nextRound();
+  }
+
+  function nextRoundWithButton() {
+    // Button click ignores cooldown
     gameActions.nextRound();
   }
 
@@ -118,7 +123,7 @@
     <h1 class="round-title next">next</h1>
     <button
       class="icon-button next-button"
-      onclick={nextRound}
+      onclick={nextRoundWithButton}
       title="Next Round"
     >
       {#if $canAdvanceRound}

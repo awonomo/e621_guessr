@@ -178,7 +178,6 @@
   }
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .round-title {
     font-size: 2rem;
@@ -194,7 +193,7 @@
   }
 
   .score-heading {
-    font-size: 6rem;
+    font-size: 4rem;
   }
 
   .score-heading.glowing {
@@ -208,5 +207,10 @@
 
   .total-score {
     font-size: 1rem;
+
+  }
+
+  .total-score .score {
+    padding-left: 0rem;
   }
 }

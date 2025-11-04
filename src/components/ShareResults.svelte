@@ -9,7 +9,7 @@
   let shareText = '';
   
   // Check if native share is available (mobile devices)
-  const hasNativeShare = typeof navigator !== 'undefined' && 'share' in navigator;
+  const hasNativeShare = typeof navigator !== 'undefined' && 'share' in navigator && 'canShare' in navigator;
   
   function generateShareText(): string {
     const totalScore = session.totalScore.toLocaleString();
@@ -44,9 +44,12 @@
       lines.push(`e621guessr daily ${dailyDate}`);
     } else {
       // Format game mode based on settings
-      const timeStr = session.settings.timeLimit === -1 
+      const timeLimit = session.settings.timeLimit;
+      const timeStr = timeLimit === -1 
         ? 'untimed' 
-        : `${session.settings.timeLimit / 60}m`;
+        : timeLimit < 60 
+          ? `${timeLimit}s`
+          : `${timeLimit / 60}m`;
       lines.push(`e621guessr - ${timeStr} classic`);
     }
     
@@ -74,15 +77,21 @@
   async function handleShare() {
     shareText = generateShareText();
     
-    if (hasNativeShare) {
+    const shareData = {
+      title: isDaily ? `e621guessr daily ${dailyDate}` : 'e621guessr',
+      text: shareText,
+      url: 'https://e621-guessr.vercel.app'
+    };
+    
+    if (hasNativeShare && navigator.canShare && navigator.canShare(shareData)) {
       // Use native share on mobile
       try {
-        await navigator.share({
-          text: shareText
-        });
+        await navigator.share(shareData);
       } catch (err) {
         // User cancelled or share failed
         console.log('Share cancelled or failed:', err);
+        // Fallback to modal if native share fails
+        showModal = true;
       }
     } else {
       // Show modal on desktop
@@ -111,8 +120,9 @@
   }
   
   function shareToTelegram() {
+    const url = encodeURIComponent('https://e621-guessr.vercel.app');
     const text = encodeURIComponent(shareText);
-    window.open(`https://t.me/share/url?text=${text}`, '_blank');
+    window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
     closeModal();
   }
   
@@ -121,13 +131,7 @@
     window.open(`https://bsky.app/intent/compose?text=${text}`, '_blank');
     closeModal();
   }
-  
-  function shareToDiscord() {
-    // Discord doesn't have a direct share URL, so just copy to clipboard
-    copyToClipboard();
-    // Could show a message: "Copied! Now paste in Discord"
-  }
-  
+
   function shareToMastodon() {
     const text = encodeURIComponent(shareText);
     // Mastodon requires the instance URL, so we'll open the composer on the main site
@@ -187,12 +191,6 @@
         <button class="icon-share-button bluesky" on:click={shareToBluesky} title="Share to Bluesky">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 530" fill="currentColor">
             <path d="m135.72 44.03c66.496 49.921 138.02 151.14 164.28 205.46 26.262-54.316 97.782-155.54 164.28-205.46 47.98-36.021 125.72-63.892 125.72 24.795 0 17.712-10.155 148.79-16.111 170.07-20.703 73.984-96.144 92.854-163.25 81.433 117.3 19.964 147.14 86.092 82.697 152.22-122.39 125.59-175.91-31.511-189.63-71.766-2.514-7.3797-3.6904-10.832-3.7077-7.8964-0.0174-2.9357-1.1937 0.51669-3.7077 7.8964-13.714 40.255-67.233 197.36-189.63 71.766-64.444-66.128-34.605-132.26 82.697-152.22-67.108 11.421-142.55-7.4491-163.25-81.433-5.9562-21.282-16.111-152.36-16.111-170.07 0-88.687 77.742-60.816 125.72-24.795z"/>
-          </svg>
-        </button>
-        
-        <button class="icon-share-button discord" on:click={shareToDiscord} title="Copy for Discord">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 127.14 96.36" fill="currentColor">
-            <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/>
           </svg>
         </button>
         
@@ -408,6 +406,15 @@
       width: 56px;
       height: 56px;
       padding: 12px;
+    }
+    
+    .icon-share-button.telegram {
+      padding: 0;
+    }
+
+    .share-button {
+      padding: 0.875rem 2rem;
+      font-size: 1.125rem;
     }
   }
 </style>
