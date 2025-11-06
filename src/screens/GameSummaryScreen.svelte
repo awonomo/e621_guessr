@@ -21,15 +21,32 @@
   $: bestTag = findBestScoringTag(rounds);
   $: isDailyChallenge = $currentSession?.settings.mode === 'daily';
   $: isUntimedGame = $currentSession?.settings.timeLimit === -1;
+  $: isTimeAttackGame = $currentSession?.settings.mode === 'timeAttack';
   
-  // Format time limit for display
-  $: timeLimitDisplay = (() => {
-    if (!$currentSession) return '';
+  // Format game title for display
+  $: gameTitle = (() => {
+    if (!$currentSession) return 'Classic';
+    
+    if ($currentSession.settings.mode === 'timeAttack') {
+      return 'Time Attack';
+    }
+    
     const timeLimit = $currentSession.settings.timeLimit;
-    if (timeLimit === -1) return 'Untimed';
+    if (timeLimit === -1) {
+      return '∞ Classic';
+    }
+    
+    if (timeLimit < 60) {
+      return `${timeLimit}s Classic`;
+    }
+    
     const minutes = Math.floor(timeLimit / 60);
     const seconds = timeLimit % 60;
-    return seconds > 0 ? `${minutes}:${String(seconds).padStart(2, '0')}` : `${minutes}m`;
+    if (seconds > 0) {
+      return `${minutes}:${String(seconds).padStart(2, '0')} Classic`;
+    }
+    
+    return `${minutes}m Classic`;
   })();
   
   function handleKeydown(event: KeyboardEvent) {
@@ -107,12 +124,7 @@
         {/if}
         
         {#if !isDailyChallenge}
-          <h1 class="game-title">GAME:</h1>
-          <div class="game-info">
-            <span class="info-badge" class:untimed={isUntimedGame}>
-              {timeLimitDisplay}{isUntimedGame ? '' : '/round'}
-            </span>
-          </div>
+          <h1 class="game-title">{gameTitle}</h1>
         {/if}
         <div class="score-heading glowing">{totalScore.toLocaleString()}</div>
         
@@ -205,32 +217,9 @@
     font-size: 2rem;
     font-weight: 900;
     color: var(--text-secondary);
-    margin: 0;
+    margin: 0 0 1rem 0;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-  }
-  
-  /* Game Info (time limit display) */
-  .game-info {
-    margin: 0.5rem 0 1rem 0;
-  }
-  
-  .info-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    background: var(--bg-secondary);
-    border: 2px solid var(--accent-primary);
-    border-radius: 1rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  
-  .info-badge.untimed {
-    border-color: var(--text-accent);
-    color: var(--text-accent);
   }
   
   /* Action Buttons */

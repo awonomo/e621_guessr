@@ -10,7 +10,7 @@
   // Default settings
   const defaultSettings = {
     timeLimit: 120,
-    gameMode: 'classic' as const,
+    gameMode: 'classic' as 'classic' | 'timeAttack',
     ratings: {
       safe: true,
       questionable: false,
@@ -23,7 +23,7 @@
   
   // Form state using runes
   let timeLimit = $state(defaultSettings.timeLimit);
-  let gameMode = $state<'classic'>(defaultSettings.gameMode);
+  let gameMode = $state<'classic' | 'timeAttack'>(defaultSettings.gameMode);
   let ratings = $state<{ [key in Rating]: boolean }>({ ...defaultSettings.ratings });
   let minUpvotes = $state(defaultSettings.minUpvotes);
   let useMinUpvotes = $state(defaultSettings.useMinUpvotes);
@@ -187,7 +187,7 @@
       // Create game settings
       const settings: GameSettings = {
         mode: gameMode,
-        timeLimit,
+        timeLimit: gameMode === 'timeAttack' ? 10 : timeLimit, // Time Attack starts with 10 seconds
         totalRounds: Math.min(5, data.data.posts.length),
         ratings: selectedRatings as Rating[],
         minUpvotes,
@@ -230,8 +230,12 @@
                 type="button"
                 class="timelimit-button"
                 class:selected={option === timeLimit}
+                class:disabled={gameMode === 'timeAttack'}
+                disabled={gameMode === 'timeAttack'}
                 onclick={() => {
-                  timeLimit = option;
+                  if (gameMode !== 'timeAttack') {
+                    timeLimit = option;
+                  }
                 }}
               >
                 {option === 30 ? '30s' : option === 60 ? '60s' : option === 120 ? '2m' : option === 300 ? '5m' : '∞'}
@@ -239,7 +243,11 @@
             {/each}
           </div>
           <span class="help-text">
-            {timeLimit === -1 ? 'No time limit (infinite)' : `${Math.floor(timeLimit / 60)}:${String(timeLimit % 60).padStart(2, '0')} per round, 5 rounds per game`}
+            {gameMode === 'timeAttack' 
+              ? 'Time Attack: Start with 10s, gain time with correct guesses' 
+              : timeLimit === -1 
+                ? 'No time limit (infinite)' 
+                : `${Math.floor(timeLimit / 60)}:${String(timeLimit % 60).padStart(2, '0')} per round, 5 rounds per game`}
           </span>
         </div>
 
@@ -248,8 +256,7 @@
           <label for="gameMode">Game Mode</label>
           <select id="gameMode" bind:value={gameMode}>
             <option value="classic">Classic - Tag Guessing</option>
-            <option value="timeAttack">Time Attack (Coming Soon)</option>
-            <option value="popularity">Popularity (Coming Soon)</option>
+            <option value="timeAttack">Time Attack - Race Against Time</option>
           </select>
         </div>
 
@@ -509,6 +516,13 @@
   .timelimit-button.selected {
     background: var(--bg-accent);
     color: var(--bg-primary);
+  }
+  
+  .timelimit-button.disabled {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    opacity: 0.5;
+    cursor: not-allowed;
   }
   .timelimit-button.selected:hover {
     background: var(--text-accent);

@@ -13,8 +13,9 @@
   let localTimeRemaining = $state(0);
   let previousState: string | undefined;
   
-  // Check if current game is untimed
+  // Check if current game is untimed or time attack
   let isUntimedMode = $derived($currentSession?.settings.timeLimit === -1);
+  let isTimeAttackMode = $derived($currentSession?.settings.mode === 'timeAttack');
   
   // Calculate pauses remaining
   let pausesRemaining = $derived(3 - ($currentRound?.pauseCount || 0));
@@ -32,6 +33,9 @@
   
   // Check if we're in warning zone (last 10 seconds) - but not in untimed mode
   let isWarningZone = $derived(!isUntimedMode && localTimeRemaining <= 10 && localTimeRemaining > 0);
+  
+  // Time Attack mode gets extra urgency styling when time is very low
+  let isCriticalZone = $derived(isTimeAttackMode && localTimeRemaining <= 5 && localTimeRemaining > 0);
   
   // Start pulse animation in warning zone
   let pulseAnimation = $derived(isWarningZone);
@@ -102,6 +106,8 @@
   <div 
     class="timer-display {variant}"
     class:warning={isWarningZone}
+    class:critical={isCriticalZone}
+    class:time-attack={isTimeAttackMode}
     class:pulse={pulseAnimation}
   >
     <div class="time-text {variant}">
@@ -231,6 +237,40 @@
   .timer-display.warning .time-text {
     color: #ff6666;
     text-shadow: 0 0 10px rgba(255, 68, 68, 0.8);
+  }
+  
+  /* Time Attack mode styling */
+  .timer-display.time-attack {
+    border-color: #00ff88;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+  }
+  
+  .timer-display.time-attack .time-text {
+    color: #00ff88;
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+  }
+  
+  /* Critical zone for Time Attack (overrides time-attack when very low) */
+  .timer-display.critical {
+    border-color: #ff2200 !important;
+    box-shadow: 0 0 25px rgba(255, 34, 0, 0.6) !important;
+    animation: criticalPulse 0.5s ease-in-out infinite !important;
+  }
+  
+  .timer-display.critical .time-text {
+    color: #ff4444 !important;
+    text-shadow: 0 0 15px rgba(255, 34, 0, 1) !important;
+  }
+  
+  @keyframes criticalPulse {
+    0%, 100% { 
+      transform: scale(1); 
+      box-shadow: 0 0 25px rgba(255, 34, 0, 0.6);
+    }
+    50% { 
+      transform: scale(1.05); 
+      box-shadow: 0 0 35px rgba(255, 34, 0, 0.9);
+    }
   }
   
   .pause-button {

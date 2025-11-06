@@ -45,11 +45,13 @@
     } else {
       // Format game mode based on settings
       const timeLimit = session.settings.timeLimit;
-      const timeStr = timeLimit === -1 
-        ? 'untimed' 
-        : timeLimit < 60 
-          ? `${timeLimit}s`
-          : `${timeLimit / 60}m`;
+      const timeStr = session.settings.mode === 'timeAttack'
+        ? 'time attack'
+        : timeLimit === -1 
+          ? 'untimed' 
+          : timeLimit < 60 
+            ? `${timeLimit}s`
+            : `${timeLimit / 60}m`;
       lines.push(`e621guessr - ${timeStr} classic`);
     }
     

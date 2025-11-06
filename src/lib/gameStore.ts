@@ -404,6 +404,23 @@ export const gameActions = {
         totalGuesses: round.totalGuesses
       };
       
+      // Time Attack mode: Add time based on guess score
+      if (session.settings.mode === 'timeAttack') {
+        let timeBonus = 3; // Default 3 seconds for <1000 points
+        
+        if (tagEntry.score >= 8000) {
+          timeBonus = 15;
+        } else if (tagEntry.score >= 4000) {
+          timeBonus = 10;
+        } else if (tagEntry.score >= 2000) {
+          timeBonus = 6;
+        } else if (tagEntry.score >= 1000) {
+          timeBonus = 5;
+        }
+        
+        newRound.timeRemaining = Math.min(newRound.timeRemaining + timeBonus, 999); // Cap at 999 seconds
+      }
+      
       // Create new session with updated round and total score
       const newSession = {
         ...session,

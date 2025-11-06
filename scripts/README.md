@@ -10,7 +10,7 @@ npm run minor   # New features (backward compatible)
 npm run major   # Breaking changes
 ```
 
-That's it! Everything else is automatic. 🎉
+That's it! Everything else is automatic.
 
 ## What Happens Automatically
 
