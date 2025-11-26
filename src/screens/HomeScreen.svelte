@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import Stats from '../components/Stats.svelte';
   import Footer from '../components/Footer.svelte';
+  import UserMenu from '../components/UserMenu.svelte';
   
   let showStats = $state(false);
   
@@ -20,6 +21,11 @@
 </script>
 
 <div class="home-screen">
+  <!-- User Menu - positioned at top right -->
+  <div class="user-menu-position">
+    <UserMenu />
+  </div>
+  
   <!-- Hero Section -->
   <div class="hero">
     <!-- <div class="mascot-container">
@@ -86,6 +92,14 @@
     align-items: center;
     padding: 2rem;
     background: var(--bg-primary);
+    position: relative;
+  }
+  
+  .user-menu-position {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 100;
   }
   
   .hero {

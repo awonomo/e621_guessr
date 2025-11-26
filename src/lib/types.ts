@@ -136,7 +136,6 @@ export interface GameStats {
   bestScore: number;
   totalTagsGuessed: number;
   accuracyRate: number;
-  favoriteCategories: TagCategory[];
   dailyChallengesCompleted: number;
   bestTag: BestTag | null;
 }

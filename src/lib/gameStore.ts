@@ -21,6 +21,7 @@ import {
   type TagScoreEntry
 } from './types.js';
 import backendApi from './backendApi.js';
+import { authApi, isAuthenticated, user } from './authStore.js';
 
 // PRIVATE HELPER FUNCTIONS - used by other functions in this file
 
@@ -63,7 +64,6 @@ const appState = writable<AppState>({
     bestScore: 0,
     totalTagsGuessed: 0,
     accuracyRate: 0,
-    favoriteCategories: [],
     dailyChallengesCompleted: 0,
     bestTag: null
   },
@@ -961,6 +961,14 @@ export const gameActions = {
   }
 };
 
+// Initialize auth-aware stats for already authenticated users
+export async function initializeAuthenticatedStats(): Promise<void> {
+  const authenticated = get(isAuthenticated);
+  if (authenticated) {
+    await loadStatsFromDatabase();
+  }
+}
+
 // Helper functions - functions used internally
 function updateUserStats(state: AppState, session: GameSession) {
   const stats = state.userStats;
@@ -991,6 +999,12 @@ function updateUserStats(state: AppState, session: GameSession) {
     const sessionAccuracy = correctGuesses / totalGuesses;
     stats.accuracyRate = (stats.accuracyRate * (stats.gamesPlayed - 1) + sessionAccuracy) / stats.gamesPlayed;
   }
+
+  // Save to localStorage (always)
+  saveToStorage();
+
+  // Also save to database if authenticated (don't await to avoid blocking UI)
+  saveStatsToDatabase().catch(console.error);
 }
 
 // Persistence helper functions are exported
@@ -1024,6 +1038,143 @@ export function loadFromStorage() {
   }
 }
 
+/**
+ * Auth-aware stats management functions
+ */
+export async function handleLoginStatsSync(): Promise<void> {
+  const authenticated = get(isAuthenticated);
+  const currentUser = get(user);
+  
+  if (!authenticated || !currentUser) return;
+  
+  try {
+    // Get current localStorage stats
+    const localStats = get(appState).userStats;
+    console.log('📊 LocalStorage stats to migrate:', localStats);
+    
+    // Clean up the stats object - remove any old fields and ensure correct types
+    const cleanStats = {
+      gamesPlayed: Number(localStats.gamesPlayed) || 0,
+      totalScore: Number(localStats.totalScore) || 0,
+      averageScore: Number(localStats.averageScore) || 0,
+      bestScore: Number(localStats.bestScore) || 0,
+      totalTagsGuessed: Number(localStats.totalTagsGuessed) || 0,
+      accuracyRate: Number(localStats.accuracyRate) || 0,
+      dailyChallengesCompleted: Number(localStats.dailyChallengesCompleted) || 0,
+      bestTag: localStats.bestTag
+    };
+    
+    console.log('📊 Cleaned stats for migration:', cleanStats);
+    console.log('📊 Stats data type check:', {
+      gamesPlayed: typeof cleanStats.gamesPlayed,
+      totalScore: typeof cleanStats.totalScore,
+      averageScore: typeof cleanStats.averageScore,
+      bestScore: typeof cleanStats.bestScore,
+      totalTagsGuessed: typeof cleanStats.totalTagsGuessed,
+      accuracyRate: typeof cleanStats.accuracyRate,
+      dailyChallengesCompleted: typeof cleanStats.dailyChallengesCompleted,
+      bestTag: typeof cleanStats.bestTag
+    });
+    
+    // Try to migrate localStorage stats to user account
+    const migrationResult = await authApi.migrateStats(cleanStats);
+    
+    if (migrationResult.success) {
+      if (migrationResult.migrated) {
+        console.log('📊 Successfully migrated localStorage stats to user account!');
+        
+        // Clear localStorage stats since they're now in the database
+        const playerId = getOrCreatePlayerId();
+        const savedData = localStorage.getItem(`gameState_${playerId}`);
+        if (savedData) {
+          const data = JSON.parse(savedData);
+          data.userStats = {
+            gamesPlayed: 0,
+            totalScore: 0,
+            averageScore: 0,
+            bestScore: 0,
+            totalTagsGuessed: 0,
+            accuracyRate: 0,
+            dailyChallengesCompleted: 0,
+            bestTag: null
+          };
+          localStorage.setItem(`gameState_${playerId}`, JSON.stringify(data));
+        }
+      }
+      
+      // Load current stats from database
+      await loadStatsFromDatabase();
+    } else {
+      console.warn('Stats migration failed:', migrationResult.message);
+    }
+  } catch (error) {
+    console.error('Failed to sync stats on login:', error);
+  }
+}
+
+export async function loadStatsFromDatabase(): Promise<void> {
+  const authenticated = get(isAuthenticated);
+  if (!authenticated) return;
+  
+  try {
+    const result = await authApi.getUserStats();
+    
+    if (result.success && result.stats) {
+      console.log('📊 Raw stats from database:', result.stats);
+      console.log('📊 BestTag from database:', result.stats.bestTag);
+      console.log('📊 BestTag type:', typeof result.stats.bestTag);
+      
+      // Update appState with database stats
+      appState.update(state => ({
+        ...state,
+        userStats: result.stats
+      }));
+      
+      console.log('📊 Loaded stats from database');
+      
+      // Verify the stats were set correctly
+      const currentStats = get(appState).userStats;
+      console.log('📊 Current stats after loading:', currentStats);
+      console.log('📊 Current bestTag after loading:', currentStats.bestTag);
+    }
+  } catch (error) {
+    console.error('Failed to load stats from database:', error);
+  }
+}
+
+export async function saveStatsToDatabase(): Promise<void> {
+  const authenticated = get(isAuthenticated);
+  if (!authenticated) return;
+  
+  try {
+    const currentStats = get(appState).userStats;
+    
+    // Clean up the stats object - same cleaning as migration
+    const cleanStats = {
+      gamesPlayed: Number(currentStats.gamesPlayed) || 0,
+      totalScore: Number(currentStats.totalScore) || 0,
+      averageScore: Number(currentStats.averageScore) || 0,
+      bestScore: Number(currentStats.bestScore) || 0,
+      totalTagsGuessed: Number(currentStats.totalTagsGuessed) || 0,
+      accuracyRate: Number(currentStats.accuracyRate) || 0,
+      dailyChallengesCompleted: Number(currentStats.dailyChallengesCompleted) || 0,
+      bestTag: currentStats.bestTag
+    };
+    
+    console.log('📊 Saving cleaned stats to database:', cleanStats);
+    
+    const result = await authApi.updateUserStats(cleanStats);
+    
+    if (result.success) {
+      console.log('📊 Saved stats to database');
+    } else {
+      console.warn('Failed to save stats to database:', result.message);
+    }
+  } catch (error) {
+    console.error('Failed to save stats to database:', error);
+  }
+}
+
 function saveSettingsToStorage() {
   try {
     const playerId = getOrCreatePlayerId();
@@ -1052,5 +1203,13 @@ if (typeof window !== 'undefined') {
   // Save stats when page is about to unload
   window.addEventListener('beforeunload', () => {
     saveToStorage();
+  });
+
+  // Initialize auth-aware stats management
+  isAuthenticated.subscribe(async (authenticated) => {
+    if (authenticated) {
+      // User just logged in - trigger stats sync
+      await handleLoginStatsSync();
+    }
   });
 }

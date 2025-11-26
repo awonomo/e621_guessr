@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { currentState, gameActions } from './lib/gameStore';
+  import { currentState, gameActions, initializeAuthenticatedStats } from './lib/gameStore';
+  import { initializeAuth } from './lib/authStore';
   
   // Import screen components
   import HomeScreen from './screens/HomeScreen.svelte';
@@ -47,7 +48,13 @@
     // If not adult, they will be redirected away by the modal component
   }
   
-  onMount(() => {
+  onMount(async () => {
+    // Initialize authentication system
+    initializeAuth();
+    
+    // Initialize auth-aware stats (loads database stats if user is already logged in)
+    await initializeAuthenticatedStats();
+    
     // Check age verification on app load
     isAgeVerified = checkAgeVerification();
     if (!isAgeVerified) {

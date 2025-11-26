@@ -5,8 +5,12 @@ import {
   scoringGuessSchema,
   bulkScoringSchema 
 } from '../middleware/validation.js';
+import { scoringRateLimitMiddleware } from '../middleware/rateLimit.js';
 
 const router = Router();
+
+// Apply more lenient rate limiting to scoring endpoints
+router.use(scoringRateLimitMiddleware);
 
 /**
  * Score a single tag guess (main endpoint)

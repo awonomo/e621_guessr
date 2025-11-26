@@ -4,12 +4,15 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { postsRouter } from './routes/posts.js';
 import dailyRouter from './routes/daily.js';
 import scoringRouter from './routes/scoring.js';
 import tagsRouter from './routes/tags.js';
 import debugRouter from './routes/debug.js';
 import adminRouter from './routes/admin.js';
+import authRouter from './routes/auth.js';
+import userRouter from './routes/user.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { rateLimitMiddleware } from './middleware/rateLimit.js';
 import { schedulerService } from './services/SchedulerService.js';
@@ -29,9 +32,18 @@ app.use(cors({
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-// Rate limiting
-app.use(rateLimitMiddleware);
+// Rate limiting - exclude scoring routes which have their own rate limiting
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/scoring')) {
+    // Skip global rate limiting for scoring endpoints
+    next();
+  } else {
+    // Apply global rate limiting to other endpoints
+    rateLimitMiddleware(req, res, next);
+  }
+});
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -43,6 +55,8 @@ app.get('/api/health', (req, res) => {
 });
 
 // API routes
+app.use('/api/auth', authRouter);
+app.use('/api/user', userRouter);
 app.use('/api/posts', postsRouter);
 app.use('/api/daily', dailyRouter);
 app.use('/api/scoring', scoringRouter);

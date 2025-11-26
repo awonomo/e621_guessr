@@ -75,6 +75,41 @@ dbCommand
     }
   });
 
+dbCommand
+  .command('setup-auth')
+  .description('Setup authentication tables and schema')
+  .action(async () => {
+    try {
+      console.log('🔧 Setting up authentication schema...');
+      
+      // Read and execute auth schema file
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      const authSchemaPath = path.join(process.cwd(), 'auth_schema.sql');
+      
+      let authSchema: string;
+      try {
+        authSchema = await fs.readFile(authSchemaPath, 'utf-8');
+      } catch (error) {
+        console.error('❌ Could not read auth_schema.sql file');
+        console.error('   Make sure auth_schema.sql exists in the backend directory');
+        process.exit(1);
+      }
+      
+      // Execute schema in database
+      await db.query(authSchema);
+      
+      console.log('✅ Authentication tables created successfully');
+      console.log('📧 Don\'t forget to set up email environment variables:');
+      console.log('   EMAIL_USER, EMAIL_PASS, JWT_SECRET');
+      process.exit(0);
+    } catch (error) {
+      console.error('❌ Failed to setup authentication schema:', error);
+      console.error('   Tip: Make sure your database is running and accessible');
+      process.exit(1);
+    }
+  });
+
 // Tag management commands
 const tagsCommand = program
   .command('tags')
