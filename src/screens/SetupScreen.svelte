@@ -18,6 +18,8 @@
     },
     minUpvotes: 250,
     useMinUpvotes: true,
+    minTagCount: 50,
+    useMinTagCount: true,
     customCriteria: ''
   };
   
@@ -27,6 +29,8 @@
   let ratings = $state<{ [key in Rating]: boolean }>({ ...defaultSettings.ratings });
   let minUpvotes = $state(defaultSettings.minUpvotes);
   let useMinUpvotes = $state(defaultSettings.useMinUpvotes);
+  let minTagCount = $state(defaultSettings.minTagCount);
+  let useMinTagCount = $state(defaultSettings.useMinTagCount);
   let customCriteria = $state(defaultSettings.customCriteria);
   let isLoading = $state(false);
   let errorMessage = $state('');
@@ -43,6 +47,8 @@
         ratings = { ...defaultSettings.ratings, ...settings.ratings };
         minUpvotes = settings.minUpvotes ?? defaultSettings.minUpvotes;
         useMinUpvotes = settings.useMinUpvotes ?? defaultSettings.useMinUpvotes;
+        minTagCount = settings.minTagCount ?? defaultSettings.minTagCount;
+        useMinTagCount = settings.useMinTagCount ?? defaultSettings.useMinTagCount;
         customCriteria = settings.customCriteria ?? defaultSettings.customCriteria;
         console.log('🔄 Loaded setup settings:');
       }
@@ -68,6 +74,8 @@
         ratings: { ...ratings },
         minUpvotes,
         useMinUpvotes,
+        minTagCount,
+        useMinTagCount,
         customCriteria
       };
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -90,6 +98,7 @@
       if (timeLimit > 600) timeLimit = 600;
     }
     if (minUpvotes > 2000) minUpvotes = 2000;
+    if (minTagCount > 200) minTagCount = 200;
   });
 
   // Save settings whenever they change (but only after initial load)
@@ -118,44 +127,6 @@
     }
   }
   
-  function buildTagsQuery(): string {
-    const tags: string[] = [];
-    
-    // Handle ratings
-    const selectedRatings = Object.entries(ratings)
-      .filter(([, selected]) => selected)
-      .map(([rating]) => rating);
-    
-    // Only add rating filters if not all ratings are selected (all selected = no filter needed)
-    if (selectedRatings.length === 1) {
-      const ratingMap = { safe: 'rating:s', questionable: 'rating:q', explicit: 'rating:e' };
-      tags.push(ratingMap[selectedRatings[0] as Rating]);
-    } else if (selectedRatings.length === 2) {
-      const allRatings: Rating[] = ['safe', 'questionable', 'explicit'];
-      const missing = allRatings.find(r => !selectedRatings.includes(r));
-      if (missing) {
-        const excludeMap = { safe: '-rating:s', questionable: '-rating:q', explicit: '-rating:e' };
-        tags.push(excludeMap[missing]);
-      }
-    }
-    // If selectedRatings.length === 3 (all selected), no rating filter is added
-    
-    // Minimum score
-    if (useMinUpvotes && minUpvotes > 0) {
-      tags.push(`score:>=${minUpvotes}`);
-    }
-    
-    // Fixed tags for game quality
-    tags.push('-animated', '-young', 'tagcount:>=50');
-    
-    // Custom criteria
-    if (customCriteria.trim()) {
-      tags.push(customCriteria.trim());
-    }
-    
-    return tags.join(' ');
-  }
-  
   async function startGame() {
     errorMessage = '';
     
@@ -164,12 +135,11 @@
     isLoading = true;
     
     try {
-      const query = buildTagsQuery();
       const selectedRatings = Object.entries(ratings)
         .filter(([, selected]) => selected)
         .map(([rating]) => rating);
       
-      const url = `${backendApi.baseUrl}/api/posts?limit=5&ratings=${selectedRatings.join(',')}&minScore=${minUpvotes}&customCriteria=${encodeURIComponent(customCriteria)}&tags=${encodeURIComponent('')}`;
+      const url = `${backendApi.baseUrl}/api/posts?limit=5&ratings=${selectedRatings.join(',')}&minScore=${useMinUpvotes ? minUpvotes : 0}&minTagCount=${useMinTagCount ? minTagCount : 0}&customCriteria=${encodeURIComponent(customCriteria)}&tags=${encodeURIComponent('')}`;
 
       console.log('🔍 Fetching posts');
 
@@ -191,6 +161,7 @@
         totalRounds: Math.min(5, data.data.posts.length),
         ratings: selectedRatings as Rating[],
         minUpvotes,
+        minTagCount,
         customCriteria
       };
       
@@ -315,6 +286,42 @@
           </span>
         </div>
 
+        <!-- Minimum tags -->
+        <div class="form-group">
+          <span class="label-text">Minimum Tags</span>
+          <div class="upvotes-control">
+            <div class="toggle-container">
+              <button 
+                type="button"
+                class="toggle-button"
+                class:active={useMinTagCount}
+                onclick={() => useMinTagCount = !useMinTagCount}
+              >
+                {useMinTagCount ? 'ON' : 'OFF'}
+              </button>
+            </div>
+            <div class="slider-container" class:disabled={!useMinTagCount}>
+              <input 
+                type="range" 
+                min="0" 
+                max="200"
+                step="1"
+                bind:value={minTagCount}
+                disabled={!useMinTagCount}
+                class="upvotes-slider"
+              />
+              <div class="slider-value">
+                {minTagCount.toLocaleString()}
+              </div>
+            </div>
+          </div>
+          <span class="help-text">
+            {useMinTagCount 
+              ? `Only posts with ${minTagCount}+ tags` 
+              : 'All posts regardless of tag count'}
+          </span>
+        </div>
+
         <!-- Custom criteria -->
         <div class="form-group">
           <label for="customCriteria">Custom Tags (Optional)</label>
@@ -362,7 +369,7 @@
   }
   
   .container {
-    max-width: 800px;
+    max-width: 850px;
     width: 100%;
     margin: 0 auto;
     padding: 0 1rem;
@@ -635,7 +642,7 @@
   .slider-value {
     font-weight: 600;
     color: var(--text-primary);
-    min-width: 4rem;
+    min-width: 1rem;
     text-align: right;
     font-variant-numeric: tabular-nums;
   }

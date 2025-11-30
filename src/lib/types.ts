@@ -32,6 +32,7 @@ export interface GameSettings {
   totalRounds: number;
   ratings: Rating[];
   minUpvotes: number;
+  minTagCount: number;
   customCriteria: string;
 }
 

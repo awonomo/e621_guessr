@@ -75,6 +75,7 @@ export interface PostsQuery {
   limit?: number;
   page?: number;
   minScore?: number;
+  minTagCount?: number;
   ratings?: Rating[];
   customCriteria?: string;
 }
@@ -102,6 +103,7 @@ export interface DailyChallengeData {
     totalRounds: number;
     ratings: Rating[];
     minUpvotes: number;
+    minTagCount: number;
     customCriteria: string;
   };
   participants?: number;

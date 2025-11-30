@@ -91,7 +91,7 @@ function buildDailyE621Query(minPostScore: number): string {
 const DAILY_CONFIG = {
   ROUNDS: 5,
   TIME_LIMIT: 120, // 2 minutes in seconds
-  MIN_POST_SCORE: 400 // Minimum e621 post score for quality
+  MIN_POST_SCORE: 400 // Minimum post score for quality
 };
 
 /**

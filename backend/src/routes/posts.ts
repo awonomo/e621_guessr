@@ -18,6 +18,7 @@ const postsQuerySchema = z.object({
   limit: z.coerce.number().min(1).max(50).default(5),
   page: z.coerce.number().min(1).default(1),
   minScore: z.coerce.number().optional(),
+  minTagCount: z.coerce.number().optional(),
   ratings: z.string().optional(), // comma-separated: 'safe,questionable'
   customCriteria: z.string().max(100).optional()
 });
@@ -67,8 +68,10 @@ function buildE621Query(params: PostsQuery): string {
     tags.push(`score:>=${params.minScore}`);
   }
 
-  // Minimum tag count for game quality
-  tags.push('tagcount:>=50');
+  // Minimum tag count
+  if (params.minTagCount && params.minTagCount > 0) {
+    tags.push(`tagcount:>=${params.minTagCount}`);
+  }
 
   // Base restrictions for game content
   tags.push('-type:mp4');
@@ -125,6 +128,7 @@ router.get('/', async (req, res, next) => {
     const e621Query = buildE621Query({
       tags: query.tags,
       minScore: query.minScore,
+      minTagCount: query.minTagCount,
       ratings,
       customCriteria: query.customCriteria
     });
