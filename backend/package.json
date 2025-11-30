@@ -1,6 +1,6 @@
 {
   "name": "e621-guessr-backend",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Backend API for e621 Guessr game",
   "main": "dist/server.js",
   "type": "module",
